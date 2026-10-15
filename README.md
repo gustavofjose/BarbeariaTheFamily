@@ -72,7 +72,7 @@ O escopo abrange também cadastro de clientes, catálogo de serviços e adiciona
 | Código | Regra |
 |---|---|
 | RN01 | Todo atendimento está vinculado a um agendamento. |
-| RN02 | Não há pagamento “fiado”. |
+| RN02 | Não é permitido realizar atendimentos com pagamento pendente após a conclusão do serviço. O atendimento deve respeitar a política de pagamento definida pela barbearia. |
 | RN03 | As formas de pagamento previstas são Pix, crédito, débito e dinheiro. |
 | RN04 | O expediente regular configurado é de terça a sábado, das 08h às 19h; domingo e segunda-feira ficam fechados. Aberturas ou fechamentos em feriados são exceções do calendário. |
 | RN05 | Duração e preço aceitos ficam registrados no item do agendamento. As referências de catálogo são 40 minutos para corte e 60 minutos quando há adicional. |
