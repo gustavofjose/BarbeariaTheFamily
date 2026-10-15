@@ -4,7 +4,7 @@
 
 | Integrante | RGM | Usuário GitHub |
 |---|---:|---|
-| Antonio Dantas da Silva Neto | 47788356 | — |
+| Antonio Dantas da Silva Neto | 47788356 | AntonioDS |
 | Arthur de Jesus Salviano Oliveira | 47764988 | arthurjso12-dev |
 | Gustavo Frutuoso José | 47604565 | gustavofjose |
 | Heitor Tureck de Oliveira | 47104503 | syndaflod |
