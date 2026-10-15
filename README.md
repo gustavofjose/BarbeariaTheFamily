@@ -24,7 +24,7 @@ Os serviços considerados incluem corte, barba, combos e adicionais. A operaçã
 
 O escopo abrange também cadastro de clientes, catálogo de serviços e adicionais, pagamentos, avaliações, venda de produtos, compras e fornecedores, estoque, contas a pagar, caixa, calendário, auditoria e registros de higiene. O modelo dá suporte aos dados da organização em conjunto, em vez de isolar somente a agenda.
 
-#### Processos de negócios
+#### Processos de negócio
 
 **Cadastro de clientes.** No primeiro contato, a barbearia registra os dados necessários para identificar o cliente e confirmar os horários. O modelo mantém nome e telefone como dados de contato e permite e-mail opcional. Preferências de marketing ficam separadas das mensagens operacionais.
 
