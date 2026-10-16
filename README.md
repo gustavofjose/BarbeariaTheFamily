@@ -10,6 +10,14 @@
 | Heitor Tureck de Oliveira | 47104503 | syndaflod |
 | Lucas Ramon Bezerra Gomes | 47766263 | — |
 
+## Identificação da organização
+
+- **Nome fantasia:** The Family Hair
+- **Razão social:** 61.946.399 William Loreilhe
+- **CNPJ:** 61.946.399/0001-92
+- **Endereço:** Rua Sonho Gaúcho, 352, Jardim São Nicolau, São Paulo — SP, CEP 03685-000
+- **Telefone:** (11) 98520-6485
+
 ## 1. Relatório Técnico Final
 
 Este projeto especifica a base de dados de gestão da Barbearia The Family Hair. O sistema organiza agenda e atendimento e reúne os registros de clientes, profissionais, serviços, pagamentos, vendas, compras, estoque e caixa. Os dados estruturados apoiam a operação diária e a análise gerencial.
