@@ -128,7 +128,7 @@ O modelo conceitual possui 25 entidades/tabelas. Cliente e profissional se relac
 | `COMPRA` — `PRODUTO` | N:N por `ITEM_COMPRA`, com quantidade e custo praticado. |
 | `VENDA` — `PRODUTO` | N:N por `ITEM_VENDA`, com quantidade e preço praticado. |
 
-**DER conceitual:** [Modelo lógico.pdf](Modelo lógico.pdf). O diagrama representa entidades, atributos, identificadores, relacionamentos, entidades associativas e cardinalidades mínimas/máximas nos dois lados. Foi elaborado em [informar software utilizado].
+**DER conceitual:** [modelo_logico.png](modelo_logico.png). O diagrama representa entidades, atributos, identificadores, relacionamentos, entidades associativas e cardinalidades mínimas/máximas nos dois lados. Foi elaborado em [informar software utilizado].
 
 ### 1.2 Conversão do modelo conceitual para o modelo lógico
 
