@@ -219,7 +219,7 @@ O relatório técnico é este `README.md`, na raiz da branch `main`. Os demais a
 | Artefato | Arquivo |
 |---|---|
 | Dicionário de Dados com atributos e restrições por coluna | `dicionario_de_dados.html` (para turma GTI, um `.md` separado do README) |
-| DER conceitual | `DER.png` |
+| DER conceitual | `modelo_logico.png` |
 | Modelo lógico | `diagrama.png` |
 | Levantamento da organização | `levantamento/levantamento.md` |
 | Evidências do local e da entrevista | `levantamento/evidencias/` (JPG ou PNG) |
