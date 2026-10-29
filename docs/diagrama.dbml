@@ -1,0 +1,496 @@
+// DBML do schema MySQL (sem as tabelas de exemplo users/follows/posts).
+// CHECKs e a coluna gerada flag_aberto não existem em DBML e foram omitidos
+// (estão no schema_mysql.sql). Notas indicam as regras principais.
+
+Table usuario_sistema {
+  id_usuario integer [pk, increment]
+  nome_exibicao varchar(100) [not null]
+  identificador_login varchar(150) [not null]
+  perfil varchar(30) [not null, note: 'Administrador | Atendimento | Profissional']
+  ativo boolean [not null, default: true]
+  data_criacao datetime [not null, default: `CURRENT_TIMESTAMP`]
+  data_desativacao datetime
+
+  Indexes {
+    identificador_login [unique, name: "uq_usuario_login"]
+    ativo [name: "ix_usuario_ativo"]
+  }
+
+  Note: 'Identidade individual (ou conta técnica) que opera o sistema. Não armazena senha, hash, token ou segredo.'
+}
+
+Table log_auditoria {
+  id_log bigint [pk, increment]
+  id_usuario integer [not null]
+  data_hora datetime [not null, default: `CURRENT_TIMESTAMP`]
+  acao varchar(40) [not null, note: 'LOGIN | LOGIN_FALHA | CONSULTA | DML | DDL | ALTERACAO_PERMISSAO | EXPORTACAO | ESTORNO']
+  componente varchar(20) [not null, note: 'APLICACAO | SGBD']
+  recurso varchar(60) [not null]
+  resultado varchar(20) [not null, note: 'SUCESSO | FALHA']
+  identificador_registro varchar(100)
+  origem varchar(100)
+  principal_sgbd varchar(100)
+  id_sessao_sgbd varchar(100)
+  id_correlacao varchar(64)
+  data_expurgo_prevista date [not null]
+
+  Indexes {
+    (componente, data_hora) [name: "ix_log_componente_data"]
+    (id_usuario, data_hora) [name: "ix_log_usuario_data"]
+    (principal_sgbd, data_hora) [name: "ix_log_principal_data"]
+    (recurso, data_hora) [name: "ix_log_recurso_data"]
+    data_expurgo_prevista [name: "ix_log_expurgo"]
+  }
+
+  Note: 'Trilha append-only. Não gravar senhas, tokens, dados de cartão nem snapshots de registros.'
+}
+
+Table cliente {
+  id_cliente integer [pk, increment]
+  nome varchar(100) [not null]
+  telefone varchar(20) [not null]
+  email varchar(100)
+  data_cadastro datetime [not null, default: `CURRENT_TIMESTAMP`]
+  data_atualizacao datetime
+  ativo boolean [not null, default: true]
+  aceita_marketing boolean [not null, default: false]
+  data_consentimento_marketing datetime
+
+  Indexes {
+    telefone [name: "ix_cliente_telefone"]
+  }
+
+  Note: 'Dado pessoal (LGPD): acesso restrito. Marketing é opt-in e independente do atendimento.'
+}
+
+Table profissional {
+  id_profissional integer [pk, increment]
+  nome varchar(100) [not null]
+  especialidade varchar(100)
+  telefone varchar(20)
+  ativo boolean [not null, default: true]
+
+  Indexes {
+    ativo [name: "ix_profissional_ativo"]
+  }
+}
+
+Table servico {
+  id_servico integer [pk, increment]
+  nome varchar(100) [not null]
+  descricao varchar(255)
+  duracao integer [not null, note: 'minutos, > 0']
+  preco decimal(10,2) [not null]
+  ativo boolean [not null, default: true]
+
+  Indexes {
+    nome [unique, name: "uq_servico_nome_ativo"]
+    ativo [name: "ix_servico_ativo"]
+  }
+}
+
+Table servico_extra {
+  id_extra integer [pk, increment]
+  nome varchar(100) [not null]
+  descricao varchar(255)
+  preco decimal(10,2) [not null]
+  duracao integer [not null, note: 'minutos, >= 0']
+  ativo boolean [not null, default: true]
+
+  Indexes {
+    ativo [name: "ix_extra_ativo"]
+  }
+}
+
+Table regra_calendario {
+  id_regra_calendario integer [pk, increment]
+  tipo_regra varchar(15) [not null, note: 'SEMANAL | EXCECAO']
+  dia_semana smallint [note: '1 a 7; obrigatório em SEMANAL']
+  data_especifica date [note: 'obrigatória em EXCECAO']
+  situacao varchar(10) [not null, note: 'ABERTO | FECHADO']
+  hora_abertura time
+  hora_fechamento time
+  vigencia_inicio date [not null]
+  vigencia_fim date
+  motivo varchar(120)
+  ativo boolean [not null, default: true]
+
+  Indexes {
+    (tipo_regra, dia_semana, vigencia_inicio) [name: "ix_regra_tipo_dia_vig"]
+    data_especifica [name: "ix_regra_data"]
+    ativo [name: "ix_regra_ativo"]
+    data_especifica [unique, name: "uq_regra_excecao_data"]
+    (dia_semana, vigencia_inicio) [unique, name: "uq_regra_semanal_vig"]
+  }
+
+  Note: 'Expediente semanal e exceções (feriados). Exceção de data prevalece sobre a regra semanal.'
+}
+
+Table agendamento {
+  id_agendamento integer [pk, increment]
+  id_cliente integer [not null]
+  id_profissional integer [not null]
+  id_regra_calendario integer [not null]
+  data date [not null]
+  hora_inicio time [not null]
+  hora_fim time [not null]
+  status varchar(30) [not null, default: 'Aguardando_pagamento', note: 'Aguardando_pagamento | Confirmado | Concluido | Cancelado | Faltou']
+  politica_reserva_versao varchar(30) [not null]
+  politica_aceita_em datetime [not null]
+  criado_em datetime [not null, default: `CURRENT_TIMESTAMP`]
+  expira_em datetime
+  confirmado_em datetime
+  checkin_em datetime
+  cancelado_em datetime
+  motivo_cancelamento varchar(255)
+  observacao varchar(255)
+
+  Indexes {
+    (id_profissional, data, hora_inicio) [name: "ix_agend_prof_data_hora"]
+    id_cliente [name: "ix_agend_cliente"]
+    id_regra_calendario [name: "ix_agend_regra"]
+    status [name: "ix_agend_status"]
+  }
+}
+
+Table agendamento_servico {
+  id_agendamento integer [not null]
+  id_servico integer [not null]
+  preco_contratado decimal(10,2) [not null]
+  duracao_contratada smallint [not null]
+
+  Indexes {
+    (id_agendamento, id_servico) [pk]
+    id_servico [name: "ix_ags_servico"]
+  }
+}
+
+Table agendamento_extra {
+  id_agendamento integer [not null]
+  id_extra integer [not null]
+  preco_contratado decimal(10,2) [not null]
+  duracao_contratada smallint [not null]
+
+  Indexes {
+    (id_agendamento, id_extra) [pk]
+    id_extra [name: "ix_age_extra"]
+  }
+}
+
+Table pagamento {
+  id_pagamento integer [pk, increment]
+  id_agendamento integer [not null]
+  id_pagamento_origem integer [note: 'obrigatório em Estorno']
+  tipo_operacao varchar(20) [not null, note: 'Cobranca | Estorno']
+  forma_pagamento varchar(30) [not null, note: 'Pix | Credito | Debito | Dinheiro']
+  valor decimal(10,2) [not null]
+  status varchar(30) [not null, note: 'Pendente | Pago | Falhou']
+  criado_em datetime [not null, default: `CURRENT_TIMESTAMP`]
+  confirmado_em datetime
+  referencia_provedor varchar(100)
+  chave_idempotencia varchar(100)
+
+  Indexes {
+    (id_agendamento, status) [name: "ix_pag_agend_status"]
+    (status, criado_em) [name: "ix_pag_status_criado"]
+    id_pagamento_origem [name: "ix_pag_origem"]
+    referencia_provedor [unique, name: "uq_pag_referencia_provedor"]
+    chave_idempotencia [unique, name: "uq_pag_idempotencia"]
+  }
+
+  Note: 'Tentativas, capturas e estornos. Nunca armazenar número de cartão, CVV, senha ou token.'
+}
+
+Table avaliacao {
+  id_avaliacao integer [pk, increment]
+  id_agendamento integer [not null]
+  nota integer [not null, note: '1 a 5']
+  comentario varchar(500)
+  data_avaliacao datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    id_agendamento [unique, name: "uq_avaliacao_agend"]
+  }
+}
+
+Table produto {
+  id_produto integer [pk, increment]
+  nome varchar(120) [not null]
+  tipo_produto varchar(15) [not null, note: 'Revenda | Insumo | Ambos']
+  unidade_medida varchar(15) [not null]
+  sku varchar(50)
+  descricao varchar(255)
+  preco_venda decimal(10,2) [note: 'obrigatório se tipo_produto <> Insumo']
+  ativo boolean [not null, default: true]
+  estoque_minimo decimal(10,3)
+
+  Indexes {
+    sku [unique, name: "uq_produto_sku"]
+    (ativo, nome) [name: "ix_produto_ativo_nome"]
+  }
+
+  Note: 'Sem saldo editável: o saldo é a soma dos movimentos em movimento_estoque.'
+}
+
+Table fornecedor {
+  id_fornecedor integer [pk, increment]
+  nome_razao_social varchar(150) [not null]
+  documento_fiscal varchar(20)
+  telefone varchar(20)
+  email varchar(150)
+  ativo boolean [not null, default: true]
+
+  Indexes {
+    documento_fiscal [unique, name: "uq_fornecedor_documento"]
+  }
+}
+
+Table compra {
+  id_compra integer [pk, increment]
+  id_fornecedor integer [not null]
+  id_usuario integer [not null]
+  data_pedido datetime [not null, default: `CURRENT_TIMESTAMP`]
+  status varchar(20) [not null, default: 'Rascunho', note: 'Rascunho | Pedida | Recebida | Cancelada']
+  data_recebimento datetime
+  valor_total decimal(10,2) [not null, default: 0]
+  observacao varchar(255)
+
+  Indexes {
+    id_fornecedor [name: "ix_compra_fornecedor"]
+    id_usuario [name: "ix_compra_usuario"]
+    status [name: "ix_compra_status"]
+  }
+}
+
+Table item_compra {
+  id_compra integer [not null]
+  id_produto integer [not null]
+  quantidade decimal(10,3) [not null]
+  custo_unitario decimal(10,2) [not null]
+
+  Indexes {
+    (id_compra, id_produto) [pk]
+    id_produto [name: "ix_icompra_produto"]
+  }
+}
+
+Table venda {
+  id_venda integer [pk, increment]
+  id_usuario integer [not null]
+  id_cliente integer
+  data_hora datetime [not null, default: `CURRENT_TIMESTAMP`]
+  status varchar(20) [not null, default: 'Aberta', note: 'Aberta | Concluida | Cancelada']
+  valor_total decimal(10,2) [not null, default: 0]
+  forma_pagamento varchar(30) [note: 'Pix | Credito | Debito | Dinheiro; obrigatória se Concluida']
+
+  Indexes {
+    id_usuario [name: "ix_venda_usuario"]
+    id_cliente [name: "ix_venda_cliente"]
+    data_hora [name: "ix_venda_data"]
+  }
+}
+
+Table item_venda {
+  id_venda integer [not null]
+  id_produto integer [not null]
+  quantidade decimal(10,3) [not null]
+  preco_unitario decimal(10,2) [not null]
+  desconto_unitario decimal(10,2)
+
+  Indexes {
+    (id_venda, id_produto) [pk]
+    id_produto [name: "ix_ivenda_produto"]
+  }
+}
+
+Table conta_pagar {
+  id_conta integer [pk, increment]
+  id_fornecedor integer
+  id_compra integer
+  id_usuario integer [not null]
+  descricao varchar(150) [not null]
+  categoria varchar(40) [not null]
+  valor decimal(10,2) [not null]
+  data_vencimento date [not null]
+  status varchar(20) [not null, default: 'Aberta', note: 'Aberta | Paga | Atrasada | Cancelada']
+  data_baixa datetime
+
+  Indexes {
+    id_fornecedor [name: "ix_conta_fornecedor"]
+    id_compra [name: "ix_conta_compra"]
+    (data_vencimento, status) [name: "ix_conta_vencimento"]
+  }
+}
+
+Table registro_higienizacao {
+  id_registro bigint [pk, increment]
+  id_usuario integer [not null]
+  data_hora datetime [not null, default: `CURRENT_TIMESTAMP`]
+  item_area varchar(100) [not null]
+  etapa varchar(20) [not null, note: 'Limpeza | Desinfeccao | Esterilizacao | Descarte']
+  metodo varchar(120) [not null]
+  produto_lote varchar(100)
+  referencia_ciclo varchar(100)
+  resultado varchar(20) [not null, note: 'Concluido | Reprovado | Refeito']
+  observacao varchar(255)
+
+  Indexes {
+    (id_usuario, data_hora) [name: "ix_higi_usuario_data"]
+  }
+}
+
+Table fechamento_caixa {
+  id_fechamento integer [pk, increment]
+  id_usuario integer [not null]
+  aberto_em datetime [not null, default: `CURRENT_TIMESTAMP`]
+  fechado_em datetime
+  saldo_abertura decimal(10,2) [not null, default: 0]
+  status varchar(15) [not null, default: 'Aberto', note: 'Aberto | Fechado. Só pode existir um caixa Aberto (garantido no MySQL por coluna gerada flag_aberto)']
+
+  Indexes {
+    id_usuario [name: "ix_fech_usuario"]
+  }
+}
+
+Table fechamento_forma {
+  id_fechamento integer [not null]
+  forma_pagamento varchar(20) [not null, note: 'Dinheiro | Pix | Credito | Debito']
+  valor_esperado decimal(10,2) [not null]
+  valor_conferido decimal(10,2) [not null]
+  diferenca decimal(10,2)
+
+  Indexes {
+    (id_fechamento, forma_pagamento) [pk]
+  }
+}
+
+Table movimento_caixa {
+  id_movimento bigint [pk, increment]
+  id_usuario integer [not null]
+  id_pagamento integer
+  id_venda integer
+  id_conta integer
+  id_fechamento integer
+  tipo varchar(20) [not null, note: 'Entrada | Saida | Estorno | Ajuste']
+  forma_pagamento varchar(20) [not null, note: 'Dinheiro | Pix | Credito | Debito | Nao_aplicavel']
+  valor decimal(10,2) [not null]
+  data_hora datetime [not null, default: `CURRENT_TIMESTAMP`]
+  motivo varchar(255) [note: 'obrigatório em Ajuste e Estorno']
+
+  Indexes {
+    id_usuario [name: "ix_mcx_usuario"]
+    id_pagamento [name: "ix_mcx_pagamento"]
+    id_venda [name: "ix_mcx_venda"]
+    id_conta [name: "ix_mcx_conta"]
+    id_fechamento [name: "ix_mcx_fechamento"]
+    data_hora [name: "ix_mcx_data"]
+    id_pagamento [unique, name: "uq_mcx_pagamento"]
+    (id_venda, tipo) [unique, name: "uq_mcx_venda_tipo"]
+  }
+}
+
+Table movimento_estoque {
+  id_mov_estoque bigint [pk, increment]
+  id_produto integer [not null]
+  id_usuario integer [not null]
+  id_compra integer
+  id_produto_compra integer
+  id_venda integer
+  id_produto_venda integer
+  id_registro_higienizacao bigint
+  tipo varchar(15) [not null, note: 'Entrada | Saida | Ajuste']
+  quantidade decimal(10,3) [not null]
+  custo_unitario decimal(10,4)
+  data_hora datetime [not null, default: `CURRENT_TIMESTAMP`]
+  motivo varchar(255) [note: 'obrigatório em Ajuste']
+
+  Indexes {
+    (id_produto, data_hora) [name: "ix_mest_prod_data"]
+    id_compra [name: "ix_mest_compra"]
+    id_venda [name: "ix_mest_venda"]
+    id_registro_higienizacao [name: "ix_mest_higi"]
+    (id_compra, id_produto_compra) [unique, name: "uq_mest_item_compra"]
+    (id_venda, id_produto_venda) [unique, name: "uq_mest_item_venda"]
+  }
+}
+
+Table documento_fiscal {
+  id_documento bigint [pk, increment]
+  id_agendamento integer
+  id_venda integer
+  id_compra integer
+  tipo varchar(30) [not null]
+  numero varchar(30) [not null]
+  serie varchar(20)
+  chave_acesso varchar(60)
+  emitido_em datetime [not null]
+  status varchar(20) [not null, note: 'Autorizado | Pendente | Cancelado | Recebido']
+  localizador_arquivo varchar(255)
+
+  Indexes {
+    id_agendamento [name: "ix_df_agend"]
+    id_venda [name: "ix_df_venda"]
+    id_compra [name: "ix_df_compra"]
+    (tipo, `COALESCE(serie,'')`, numero) [unique, name: "uq_df_tipo_serie_numero"]
+    chave_acesso [unique, name: "uq_df_chave_acesso"]
+  }
+
+  Note: 'Referência ao documento fiscal; não calcula tributos. Arquivo/XML em repositório protegido.'
+}
+
+// ---------------------------------------------------------------- Relações
+
+Ref fk_log_usuario: log_auditoria.id_usuario > usuario_sistema.id_usuario
+
+Ref fk_agend_cliente: agendamento.id_cliente > cliente.id_cliente
+Ref fk_agend_prof: agendamento.id_profissional > profissional.id_profissional
+Ref fk_agend_regra: agendamento.id_regra_calendario > regra_calendario.id_regra_calendario
+
+Ref fk_ags_agend: agendamento_servico.id_agendamento > agendamento.id_agendamento
+Ref fk_ags_servico: agendamento_servico.id_servico > servico.id_servico
+
+Ref fk_age_agend: agendamento_extra.id_agendamento > agendamento.id_agendamento
+Ref fk_age_extra: agendamento_extra.id_extra > servico_extra.id_extra
+
+Ref fk_pag_agend: pagamento.id_agendamento > agendamento.id_agendamento
+Ref fk_pag_origem: pagamento.id_pagamento_origem > pagamento.id_pagamento
+
+Ref fk_aval_agend: avaliacao.id_agendamento - agendamento.id_agendamento
+
+Ref fk_compra_fornecedor: compra.id_fornecedor > fornecedor.id_fornecedor
+Ref fk_compra_usuario: compra.id_usuario > usuario_sistema.id_usuario
+
+Ref fk_icompra_compra: item_compra.id_compra > compra.id_compra
+Ref fk_icompra_produto: item_compra.id_produto > produto.id_produto
+
+Ref fk_venda_usuario: venda.id_usuario > usuario_sistema.id_usuario
+Ref fk_venda_cliente: venda.id_cliente > cliente.id_cliente
+
+Ref fk_ivenda_venda: item_venda.id_venda > venda.id_venda
+Ref fk_ivenda_produto: item_venda.id_produto > produto.id_produto
+
+Ref fk_conta_fornecedor: conta_pagar.id_fornecedor > fornecedor.id_fornecedor
+Ref fk_conta_compra: conta_pagar.id_compra > compra.id_compra
+Ref fk_conta_usuario: conta_pagar.id_usuario > usuario_sistema.id_usuario
+
+Ref fk_higi_usuario: registro_higienizacao.id_usuario > usuario_sistema.id_usuario
+
+Ref fk_fech_usuario: fechamento_caixa.id_usuario > usuario_sistema.id_usuario
+
+Ref fk_ff_fechamento: fechamento_forma.id_fechamento > fechamento_caixa.id_fechamento
+
+Ref fk_mcx_usuario: movimento_caixa.id_usuario > usuario_sistema.id_usuario
+Ref fk_mcx_pagamento: movimento_caixa.id_pagamento > pagamento.id_pagamento
+Ref fk_mcx_venda: movimento_caixa.id_venda > venda.id_venda
+Ref fk_mcx_conta: movimento_caixa.id_conta > conta_pagar.id_conta
+Ref fk_mcx_fechamento: movimento_caixa.id_fechamento > fechamento_caixa.id_fechamento
+
+Ref fk_mest_produto: movimento_estoque.id_produto > produto.id_produto
+Ref fk_mest_usuario: movimento_estoque.id_usuario > usuario_sistema.id_usuario
+Ref fk_mest_item_compra: movimento_estoque.(id_compra, id_produto_compra) > item_compra.(id_compra, id_produto)
+Ref fk_mest_item_venda: movimento_estoque.(id_venda, id_produto_venda) > item_venda.(id_venda, id_produto)
+Ref fk_mest_higi: movimento_estoque.id_registro_higienizacao > registro_higienizacao.id_registro
+
+Ref fk_df_agend: documento_fiscal.id_agendamento > agendamento.id_agendamento
+Ref fk_df_venda: documento_fiscal.id_venda > venda.id_venda
+Ref fk_df_compra: documento_fiscal.id_compra > compra.id_compra
