@@ -8,15 +8,18 @@
 | Arthur de Jesus Salviano Oliveira | 47764988 | arthurjso12-dev |
 | Gustavo Frutuoso José | 47604565 | gustavofjose |
 | Heitor Tureck de Oliveira | 47104503 | syndaflod |
-| Lucas Ramon Bezerra Gomes | 47766263 | — |
+| Lucas Ramon Bezerra Gomes | 47766263 | LucasGomes609 |
 
 ## Identificação da organização
--<img src="fotoEntrevista.jpg" width="250" />
+
+<img src="levantamento/evidencias/entrevista-no-local.jpg" width="250" alt="Entrevista realizada na Barbearia The Family Hair" />
+
 - **Nome fantasia:** The Family Hair
 - **Razão social:** 61.946.399 William Loreilhe
 - **CNPJ:** 61.946.399/0001-92
-- **Endereço:** Rua Sonho Gaúcho, 352, Jardim São Nicolau, São Paulo — SP, CEP 03685-000
+- **Endereço:** Rua Sonho Gaúcho, 352, Jardim São Nicolau, São Paulo, SP, CEP 03685-000
 - **Telefone:** (11) 98520-6485
+
 ## 1. Relatório Técnico Final
 
 Este projeto especifica a base de dados de gestão da Barbearia The Family Hair. O sistema organiza agenda e atendimento e reúne os registros de clientes, profissionais, serviços, pagamentos, vendas, compras, estoque e caixa. Os dados estruturados apoiam a operação diária e a análise gerencial.
@@ -25,31 +28,37 @@ Este projeto especifica a base de dados de gestão da Barbearia The Family Hair.
 
 #### Caracterização da organização
 
-A Barbearia The Family Hair é uma organização real do setor de beleza masculina, com atendimento de barbearia. A estrutura considerada no modelo possui duas cadeiras e cadastro de profissionais; o barbeiro Victor é citado no levantamento inicial. O sistema suporta múltiplos profissionais para que cada agenda e atendimento sejam associados ao responsável correto.
+A The Family Hair é uma barbearia de pequeno porte situada na Rua Sonho Gaúcho, 352, Jardim São Nicolau, São Paulo, SP. O repositório guarda a foto feita no local, o endereço, o telefone, a razão social e o CNPJ. O levantamento inicial registra duas cadeiras e cita o barbeiro Victor. O sistema foi preparado para mais de um profissional, pois a agenda precisa identificar quem realizará cada atendimento.
 
-Os serviços considerados incluem corte, barba, combos e adicionais. A operação utiliza agendamento para organizar os atendimentos. O problema de gestão identificado é a confusão na marcação de horários, somada a cancelamentos e faltas de última hora, que podem deixar períodos sem atendimento.
+O problema central é P1, a organização dos horários quando há cancelamento, atraso ou falta. O modelo também trata P2, a falta de um histórico único para pagamentos e atendimentos, e P3, o acompanhamento de produtos, compras, estoque, contas a pagar e caixa. As consultas G01, G02 e G03 apoiam P1 e P2; G04 e G05 apoiam P3.
 
-O escopo abrange também cadastro de clientes, catálogo de serviços e adicionais, pagamentos, avaliações, venda de produtos, compras e fornecedores, estoque, contas a pagar, caixa, calendário, auditoria e registros de higiene. O modelo dá suporte aos dados da organização em conjunto, em vez de isolar somente a agenda.
+O escopo reúne os dados de agenda, atendimento, pagamentos, produtos, compras, estoque e financeiro. Assim, o projeto não fica restrito ao agendamento. Detalhes que ainda dependem da confirmação do responsável, como pagamento antecipado, tolerância de atraso e a rotina atual de estoque, estão identificados no levantamento e não são apresentados como fatos da operação.
+
+#### Entrevista e levantamento
+
+A visita presencial ocorreu em 21/10/2026, às 19h10, e foi registrada na foto disponível em [levantamento/evidencias/entrevista-no-local.jpg](levantamento/evidencias/entrevista-no-local.jpg). O resumo do levantamento está em [levantamento/levantamento.md](levantamento/levantamento.md). Foram entrevistados William Loreilhe, proprietário e barbeiro, e Victor Pugaciov, barbeiro e filho do proprietário. Lucas Ramon Bezerra Gomes participou da visita pelo grupo.
+
+Na visita foi observado o atendimento em uma estrutura de duas cadeiras. O grupo levantou a necessidade de organizar a agenda e registrar ocorrências que afetam o horário reservado. Para completar a validação, as perguntas sobre o fluxo atual de marcação, pagamento, atrasos, venda de produtos, compras, estoque e caixa permanecem listadas no levantamento.
 
 #### Processos de negócio
 
-Processos de negócio e fluxos operacionais: da reserva e atendimento à administração, auditoria e ciclo de vida dos dados.
+Os processos abaixo descrevem o fluxo que o banco deve registrar. Onde a prática da barbearia ainda não foi confirmada, a regra está marcada como proposta de sistema e precisa da validação indicada no levantamento.
 
 **1. Cadastro e identificação do cliente.** No primeiro atendimento, registrar somente nome, telefone necessário para contato e, se desejado, e-mail; conferir os dados com o titular, explicar o uso operacional e não condicionar o serviço à aceitação de propaganda. Buscar duplicidade pelo telefone, permitir correção e registrar data de criação/atualização. Marketing requer opção separada, revogável e registrada.
 
 **2. Escolha de serviço e extras.** O cliente escolhe um ou mais serviços ativos de `SERVICO` e adicionais opcionais de `SERVICO_EXTRA`. Gravar as escolhas em `AGENDAMENTO_SERVICO` e `AGENDAMENTO_EXTRA`, mostrar descrição, duração, preço unitário e total antes da confirmação. Um agendamento confirmado precisa de ao menos um serviço principal; FK sozinha não garante isso.
 
-**3. Profissional, data e horário.** Oferecer profissionais ativos e consultar `REGRA_CALENDARIO` para os dias/horários semanais e exceções publicados pela barbearia (incluindo feriados abertos ou fechados). Validar que início e término caibam no expediente e verificar conflito por profissional com intervalos sobrepostos, inclusive em operações simultâneas. A premissa inicial é terça a sábado, 08:00–19:00, com domingo e segunda fechados.
+**3. Profissional, data e horário.** Oferecer profissionais ativos e consultar `REGRA_CALENDARIO` para os dias e horários semanais, além das exceções publicadas pela barbearia, incluindo feriados abertos ou fechados. Validar que início e término caibam no expediente e verificar conflito por profissional com intervalos sobrepostos, inclusive em operações simultâneas. A premissa inicial é terça a sábado, das 08:00 às 19:00, com domingo e segunda fechados.
 
-**4. Pagamento durante o agendamento.** Antes de confirmar a reserva, apresentar total e política de cancelamento e cobrar/registrar o pagamento nesse mesmo fluxo: Pix, cartão de crédito, cartão de débito ou dinheiro. Pix/cartão só contam após confirmação do provedor/adquirente; dinheiro somente quando recebido no balcão. Criar `PAGAMENTO` para cada tentativa; confirmação só após valor total devido estar pago. Não guardar número completo do cartão, CVV, senha ou token. Reserva pendente segura o horário por no máximo 10 min (proposta configurável); após expirar, liberar a vaga e reconciliar callback tardio com o provedor antes de qualquer nova cobrança/estorno.
+**4. Pagamento durante o agendamento.** O banco registra forma, valor, status e data/hora da tentativa de pagamento. Pix, cartão e dinheiro são formas previstas no modelo. A exigência de pagamento integral para confirmar a reserva e o prazo de dez minutos para uma reserva pendente são propostas do sistema; o responsável deve confirmar se há sinal ou pagamento antecipado na prática.
 
 **5. Confirmação e lembretes.** Em uma transação, persistir agendamento, serviços/extras, preço contratado, pagamento confirmado e movimento financeiro. Só então mudar para Confirmado e emitir recibo/comprovante; o documento fiscal aplicável segue a rotina definida com a contabilidade. Enviar confirmação e lembretes de 24 h e 1 h pelos canais escolhidos, sem usar esses avisos para marketing.
 
-**6. Chegada, tolerância e atendimento.** Registrar chegada/check-in. Política sugerida: tolerância de 10 minutos; o cliente deve avisar se estiver atrasado. Depois disso, atender apenas se a agenda permitir, podendo reduzir o serviço com concordância ou oferecer remarcação. Com mais de 15 minutos sem contato, pode-se marcar falta e liberar o horário. Comunicar a regra antes da reserva; não há padrão legal único para tolerância.
+**6. Chegada, tolerância e atendimento.** Registrar chegada, início e conclusão do atendimento. A proposta é registrar atraso, falta e remarcação, sem apagar o agendamento. A tolerância de dez minutos e a marcação de falta após quinze minutos sem contato ainda precisam ser confirmadas com o responsável.
 
 **7. Execução e higiene entre clientes.** Conferir serviço contratado, realizar atendimento e registrar conclusão. Entre clientes, remover resíduos e fazer limpeza/desinfecção adequada; instrumentos reutilizáveis que exijam esterilização devem seguir instruções do fabricante e normas sanitárias locais, com registro de etapa, responsável, horário e resultado. Materiais de uso único não são reprocessados.
 
-**8. Cancelamento, remarcação e falta.** Registrar quem solicitou, data/hora, motivo opcional, antecedência, status anterior/novo e decisão sobre crédito/reembolso. Política sugerida: cancelamento/remarcação com 2 h ou mais permite uma remarcação ou reembolso; abaixo de 2 h, falta ou atraso além do limite, o valor pré-pago pode ser tratado conforme política de reserva previamente aceita e legislação aplicável. Não cobrar multa adicional automática; reincidência pode exigir confirmação manual da próxima reserva. Comunicar a decisão ao cliente e registrar o estorno/crédito, sem apagar o pagamento original.
+**8. Cancelamento, remarcação e falta.** Registrar solicitante, data/hora, motivo, antecedência e resultado da solicitação. A proposta de permitir remarcação ou reembolso com duas horas de antecedência não é uma regra confirmada da barbearia. O responsável deve definir a prática para cancelamento próximo do horário, falta, crédito e estorno.
 
 **9. Venda de produtos no balcão.** Identificar produto, quantidade, preço, desconto autorizado e total; concluir venda em `VENDA`/`ITEM_VENDA`, receber por Pix, crédito, débito ou dinheiro e gerar saída de estoque na mesma transação. Cliente é opcional para venda de balcão. Nunca permitir saldo negativo sem ajuste autorizado e auditado.
 
@@ -57,34 +66,34 @@ Processos de negócio e fluxos operacionais: da reserva e atendimento à adminis
 
 **11. Contas a pagar e caixa.** Lançar obrigações com fornecedor, origem, vencimento, valor e status; alertar vencimentos e registrar cada baixa. `MOVIMENTO_CAIXA` mantém entradas/saídas por origem e forma; abertura/fechamento registra saldo inicial, esperado, contado e diferença por dinheiro, Pix e cartões. Conferir relatórios do adquirente/banco, justificar divergências e impedir alteração de caixa já fechado sem estorno/auditoria.
 
-**12. Documento fiscal.** Associar documentos emitidos às vendas/prestações e documentos recebidos às compras. O tipo de documento, incidência, emissão e prazo dependem do regime tributário, município e operação; validar com contador/Prefeitura/SEFAZ, conservar os arquivos pelo prazo fiscal aplicável e não substituir documento fiscal por recibo de pagamento.
+**12. Documento fiscal.** Associar documentos emitidos às vendas e aos atendimentos, além dos documentos recebidos nas compras. A necessidade de emissão, o tipo de documento e a guarda devem ser confirmados com a contabilidade da organização.
 
 **13. Relatórios e avaliação.** Fechar agenda e caixa por período, profissional e forma de pagamento; acompanhar ocupação, cancelamentos/faltas, vendas, margem, giro e estoque mínimo. Após atendimento concluído, permitir uma avaliação por agendamento, sem publicar comentário pessoal sem revisão e finalidade adequada.
 
-**14. Gestão de acessos, auditoria e direitos.** Conceder acesso individual por função, desativar contas no desligamento, registrar alterações e consultas relevantes. Atender pedidos de titulares com verificação de identidade e registrar resposta; expurgar/anonimizar no prazo aprovado, salvo retenção legal ou exercício regular de direitos. Em incidente, conter, preservar evidências e avaliar comunicação conforme obrigação aplicável.
+**14. Gestão de acessos, auditoria e direitos.** Conceder acesso individual por função, desativar contas no desligamento e registrar alterações relevantes. O banco limita os dados de clientes ao necessário para contato e atendimento; a política de retenção precisa ser definida pela organização.
 
 #### Requisitos funcionais
 
-- **RF01 — Clientes:** cadastrar e atualizar nome, telefone e e-mail opcional; manter o status do cadastro e evitar duplicidade conforme a regra definida para telefone.
-- **RF02 — Profissionais:** cadastrar profissionais e controlar sua situação ativa sem excluir atendimentos anteriores.
-- **RF03 — Catálogo:** cadastrar serviços e adicionais com nome, descrição, duração, preço e situação ativa.
-- **RF04 — Agendamentos:** registrar cliente, profissional, data, início, término, status e observação opcional; associar um ou mais serviços e zero ou mais adicionais.
-- **RF05 — Disponibilidade:** consultar calendário e agenda, calcular a duração total e impedir sobreposição de horários do mesmo profissional.
-- **RF06 — Pagamentos:** registrar tentativas, forma, valor, status, data/hora e relação com agendamento; manter estorno como operação referenciada ao pagamento original.
-- **RF07 — Atendimento e avaliação:** atualizar o status do atendimento e aceitar avaliação somente após conclusão.
-- **RF08 — Produtos e compras:** registrar fornecedores, compras, vendas e respectivos itens; atualizar o estoque após recebimento ou venda concluída.
-- **RF09 — Financeiro:** registrar contas a pagar, movimentos de caixa e fechamento por forma de pagamento.
-- **RF10 — Consultas:** produzir consultas gerenciais e de auditoria para agenda, cancelamentos, atendimentos, pagamentos, estoque e caixa.
-- **RF11 — Auditoria:** registrar o usuário responsável por alterações relevantes de agenda, estoque e caixa.
+- **RF01, clientes:** cadastrar e atualizar nome, telefone e e-mail opcional; manter o status do cadastro e evitar duplicidade conforme a regra definida para telefone.
+- **RF02, profissionais:** cadastrar profissionais e controlar sua situação ativa sem excluir atendimentos anteriores.
+- **RF03, catálogo:** cadastrar serviços e adicionais com nome, descrição, duração, preço e situação ativa.
+- **RF04, agendamentos:** registrar cliente, profissional, data, início, término, status e observação opcional; associar um ou mais serviços e zero ou mais adicionais.
+- **RF05, disponibilidade:** consultar calendário e agenda, calcular a duração total e impedir sobreposição de horários do mesmo profissional.
+- **RF06, pagamentos:** registrar tentativas, forma, valor, status, data/hora e relação com agendamento; manter estorno como operação referenciada ao pagamento original.
+- **RF07, atendimento e avaliação:** atualizar o status do atendimento e aceitar avaliação somente após conclusão.
+- **RF08, produtos e compras:** registrar fornecedores, compras, vendas e respectivos itens; atualizar o estoque após recebimento ou venda concluída.
+- **RF09, financeiro:** registrar contas a pagar, movimentos de caixa e fechamento por forma de pagamento.
+- **RF10, consultas:** produzir consultas gerenciais e de auditoria para agenda, cancelamentos, atendimentos, pagamentos, estoque e caixa.
+- **RF11, auditoria:** registrar o usuário responsável por alterações relevantes de agenda, estoque e caixa.
 
 #### Requisitos não funcionais
 
-- **RNF01 — Privacidade:** limitar a coleta de dados pessoais ao necessário para cadastro, agendamento e atendimento.
-- **RNF02 — Segurança:** controlar acesso por usuário e não armazenar dados completos de cartão, CVV, senhas ou credenciais.
-- **RNF03 — Integridade:** aplicar PK, FK e restrições de domínio; usar transações nas confirmações de agendamento, pagamento, venda, compra e fechamento.
-- **RNF04 — Desempenho:** a consulta de disponibilidade deve responder em menos de dois segundos nas condições previstas para a operação.
-- **RNF05 — Usabilidade:** permitir consulta e atualização rápida da agenda durante os atendimentos.
-- **RNF06 — Disponibilidade:** permitir solicitações de agendamento fora do horário de atendimento; a meta técnica de disponibilidade deve ser definida na implantação.
+- **RNF01, privacidade:** limitar a coleta de dados pessoais ao necessário para cadastro, agendamento e atendimento.
+- **RNF02, segurança:** controlar acesso por usuário e não armazenar dados completos de cartão, CVV, senhas ou credenciais.
+- **RNF03, integridade:** aplicar PK, FK e restrições de domínio; usar transações nas confirmações de agendamento, pagamento, venda, compra e fechamento.
+- **RNF04, desempenho:** a consulta de disponibilidade deve responder em menos de dois segundos nas condições previstas para a operação.
+- **RNF05, usabilidade:** permitir consulta e atualização rápida da agenda durante os atendimentos.
+- **RNF06, disponibilidade:** permitir solicitações de agendamento fora do horário de atendimento; a meta técnica de disponibilidade deve ser definida na implantação.
 
 #### Regras operacionais
 
@@ -106,13 +115,21 @@ Processos de negócio e fluxos operacionais: da reserva e atendimento à adminis
 | RN14 | Movimentos de caixa fechados não são sobrescritos; correções são feitas por lançamentos rastreáveis. |
 | RN18 | A reserva aguardando pagamento expira após dez minutos e libera o horário. Pagamentos confirmados depois da expiração são conciliados antes de nova cobrança ou estorno. |
 
+As regras RN10, RN11, RN12 e RN18 são parâmetros propostos para o sistema e precisam ser validadas com o responsável. As demais regras devem ser conferidas com a rotina observada antes da implantação.
+
 #### Restrições organizacionais, legais e de privacidade
 
 | Código | Restrição | Aplicação no sistema |
 |---|---|---|
 | RN15 | Higienização/desinfecção entre atendimentos e esterilização quando aplicável. | Registrar procedimento e responsável de acordo com instruções do fabricante e normas sanitárias competentes; o sistema não define parâmetros técnicos de esterilização. |
-| RN16 | Documentos fiscais, tributos e prazos de guarda dependem do enquadramento da organização. | Manter referências e status dos documentos; validar emissão e guarda com a contabilidade e autoridade competente. |
-| RN17 | Dados pessoais precisam de finalidade, controle de acesso e período de retenção; marketing é separado e opcional. | Coletar o mínimo necessário, restringir acesso e manter procedimento de revisão/descarte. |
+| RN16 | Documentos fiscais, tributos e prazos de guarda dependem do enquadramento da organização. | `DOCUMENTO_FISCAL` guarda somente número, data, tipo e status do documento. A obrigatoriedade de emissão deve ser confirmada com a contabilidade; o sistema não calcula tributos. |
+| RN17 | Dados pessoais precisam de finalidade, controle de acesso e período de retenção; marketing é separado e opcional. | Coletar o mínimo necessário e restringir o acesso. A política de retenção será definida pela organização antes da implantação. |
+
+#### Pontos a confirmar com o cliente
+
+1. **Nota fiscal:** confirmar com a contabilidade se a operação exige emissão de documento fiscal e qual tipo deve ser registrado. O sistema mantém apenas a referência do documento, sem cálculo tributário.
+2. **Retenção de dados:** definir, antes da implantação, o prazo e o destino dos dados pessoais após esse período: exclusão, anonimização ou guarda por obrigação legal.
+3. **Higiene:** `REGISTRO_HIGIENIZACAO` é uma proposta de controle do sistema, baseada nas normas sanitárias aplicáveis. A rotina efetivamente adotada pela barbearia ainda deve ser confirmada com William ou Victor.
 
 #### Entidades e relacionamentos conceituais
 
@@ -130,16 +147,28 @@ O modelo conceitual possui 25 entidades/tabelas. Cliente e profissional se relac
 
 | Relacionamento | Cardinalidades mín./máx. |
 |---|---|
-| `CLIENTE` — `AGENDAMENTO` | Cliente `(0,N)`; agendamento `(1,1)`. |
-| `PROFISSIONAL` — `AGENDAMENTO` | Profissional `(0,N)`; agendamento `(1,1)`. |
-| `AGENDAMENTO` — `SERVICO` | N:N por `AGENDAMENTO_SERVICO`; agendamento confirmado exige ao menos um serviço. |
-| `AGENDAMENTO` — `SERVICO_EXTRA` | N:N por `AGENDAMENTO_EXTRA`; extras são opcionais. |
-| `AGENDAMENTO` — `PAGAMENTO` | Agendamento `(0,N)`; cada tentativa pertence a um agendamento `(1,1)`. |
-| `AGENDAMENTO` — `AVALIACAO` | Agendamento `(0,1)`; avaliação pertence a um agendamento concluído `(1,1)`. |
-| `COMPRA` — `PRODUTO` | N:N por `ITEM_COMPRA`, com quantidade e custo praticado. |
-| `VENDA` — `PRODUTO` | N:N por `ITEM_VENDA`, com quantidade e preço praticado. |
+| `CLIENTE` e `AGENDAMENTO` | Cliente `(0,N)`; agendamento `(1,1)`. |
+| `PROFISSIONAL` e `AGENDAMENTO` | Profissional `(0,N)`; agendamento `(1,1)`. |
+| `AGENDAMENTO` e `SERVICO` | N:N por `AGENDAMENTO_SERVICO`; agendamento confirmado exige ao menos um serviço. |
+| `AGENDAMENTO` e `SERVICO_EXTRA` | N:N por `AGENDAMENTO_EXTRA`; extras são opcionais. |
+| `AGENDAMENTO` e `PAGAMENTO` | Agendamento `(0,N)`; cada tentativa pertence a um agendamento `(1,1)`. |
+| `AGENDAMENTO` e `AVALIACAO` | Agendamento `(0,1)`; avaliação pertence a um agendamento concluído `(1,1)`. |
+| `COMPRA` e `PRODUTO` | N:N por `ITEM_COMPRA`, com quantidade e custo praticado. |
+| `VENDA` e `PRODUTO` | N:N por `ITEM_VENDA`, com quantidade e preço praticado. |
 
-**DER conceitual:** [modelo_logico.png](modelo_logico.png). O diagrama representa entidades, atributos, identificadores, relacionamentos, entidades associativas e cardinalidades mínimas/máximas nos dois lados. Foi elaborado em [informar software utilizado].
+**DER conceitual:** [diagrama do modelo conceitual](diagramas/der-conceitual.png). O diagrama representa entidades, atributos, identificadores, relacionamentos, entidades associativas e cardinalidades mínimas/máximas nos dois lados. Foi elaborado no brModelo.
+
+#### Correções da primeira entrega
+
+| Apontamento da correção | Alteração realizada | Motivo |
+|---|---|---|
+| Organização e entrevista sem evidência | Foto da visita, endereço, telefone, CNPJ e levantamento foram incluídos no repositório. | Permitir conferir a existência da organização e o acesso do grupo. |
+| Processos restritos ao agendamento | Foram incluídos cadastro, atendimento, pagamento, cancelamento, vendas, compras, estoque, contas a pagar, caixa e higiene. | O banco representa a operação inteira. |
+| Regras sem separação | Regras operacionais e restrições organizacionais ficaram em seções separadas. | Distinguir a rotina do negócio de obrigações legais e sanitárias. |
+| Dicionário não era um dicionário | Foi criado [docs/dicionario-de-dados.html](docs/dicionario-de-dados.html), com atributos, tipos, obrigatoriedade, descrição e regras. | Documentar o modelo de forma verificável. |
+| DER sem mínimas, associativas e entidades descritas | O DER revisado apresenta cardinalidades mínimas/máximas, `SERVICO_EXTRA`, `AGENDAMENTO_SERVICO`, `AGENDAMENTO_EXTRA`, produtos e associativas de compra e venda. | Representar os relacionamentos N:N e os dados históricos dos itens. |
+| FK no DER conceitual e ligação quebrada | O DER conceitual usa identificadores, atributos e relacionamentos; PK e FK estão no modelo lógico. | Separar os níveis conceitual e lógico. |
+| Justificativa divergente do diagrama | A justificativa foi alinhada aos diagramas e ao dicionário atuais. | Evitar entidades ou regras descritas sem representação no modelo. |
 
 ### 1.2 Conversão do modelo conceitual para o modelo lógico
 
@@ -154,19 +183,19 @@ O modelo conceitual possui 25 entidades/tabelas. Cliente e profissional se relac
 
 | Tabela | Chave primária | Chaves estrangeiras |
 |---|---|---|
-| `CLIENTE` | `id_cliente` | — |
-| `PROFISSIONAL` | `id_profissional` | — |
+| `CLIENTE` | `id_cliente` | Nenhuma |
+| `PROFISSIONAL` | `id_profissional` | Nenhuma |
 | `AGENDAMENTO` | `id_agendamento` | `id_cliente`, `id_profissional`, `id_regra_calendario` |
 | `AGENDAMENTO_SERVICO` | `id_agendamento`, `id_servico` | `AGENDAMENTO`, `SERVICO` |
 | `AGENDAMENTO_EXTRA` | `id_agendamento`, `id_extra` | `AGENDAMENTO`, `SERVICO_EXTRA` |
-| `SERVICO` | `id_servico` | — |
-| `SERVICO_EXTRA` | `id_extra` | — |
+| `SERVICO` | `id_servico` | Nenhuma |
+| `SERVICO_EXTRA` | `id_extra` | Nenhuma |
 | `PAGAMENTO` | `id_pagamento` | `id_agendamento`, `id_pagamento_origem` (autorrelacionamento de estorno) |
 | `AVALIACAO` | `id_avaliacao` | `id_agendamento` (único) |
-| `USUARIO_SISTEMA` | `id_usuario` | — |
+| `USUARIO_SISTEMA` | `id_usuario` | Nenhuma |
 | `LOG_AUDITORIA` | `id_log` | `id_usuario` |
-| `PRODUTO` | `id_produto` | — |
-| `FORNECEDOR` | `id_fornecedor` | — |
+| `PRODUTO` | `id_produto` | Nenhuma |
+| `FORNECEDOR` | `id_fornecedor` | Nenhuma |
 | `COMPRA` | `id_compra` | `id_fornecedor`, `id_usuario` |
 | `ITEM_COMPRA` | `id_compra`, `id_produto` | `COMPRA`, `PRODUTO` |
 | `VENDA` | `id_venda` | `id_usuario`, `id_cliente` (opcional) |
@@ -178,7 +207,7 @@ O modelo conceitual possui 25 entidades/tabelas. Cliente e profissional se relac
 | `MOVIMENTO_ESTOQUE` | `id_mov_estoque` | `id_produto`, `id_usuario`, origem em item de compra/venda ou higienização |
 | `DOCUMENTO_FISCAL` | `id_documento` | Uma origem entre `AGENDAMENTO`, `VENDA` e `COMPRA` |
 | `REGISTRO_HIGIENIZACAO` | `id_registro` | `id_usuario` |
-| `REGRA_CALENDARIO` | `id_regra_calendario` | — |
+| `REGRA_CALENDARIO` | `id_regra_calendario` | Nenhuma |
 
 ### 1.4 Processo de normalização (1FN, 2FN e 3FN)
 
@@ -195,28 +224,28 @@ O modelo conceitual possui 25 entidades/tabelas. Cliente e profissional se relac
 - Avaliação tem vínculo único com agendamento para limitar a uma avaliação por atendimento concluído.
 - Movimentos de estoque e caixa guardam cada entrada/saída, em vez de sobrescrever somente um saldo; isso permite auditoria e reconstrução histórica.
 - FKs asseguram que as referências existam. Sobreposição temporal, presença mínima de itens e origem exclusiva de movimentos exigem validação transacional e restrições compatíveis com MySQL.
-- `NOT NULL`, `UNIQUE`, `CHECK` e `DEFAULT` documentam e implementam as regras operacionais RN01–RN18.
+- `NOT NULL`, `UNIQUE`, `CHECK` e `DEFAULT` documentam e implementam as regras operacionais RN01 a RN18.
 - Serviços, adicionais e profissionais são inativados em vez de excluídos, mantendo a integridade de operações passadas.
 
 ### 1.6 Proposta analítica para BI e IA
 
 | Indicador | Cálculo e período | Tabelas | Consulta gerencial |
 |---|---|---|---|
-| Ocupação da agenda | Minutos reservados ÷ minutos disponíveis, por profissional e semana. | `AGENDAMENTO`, `PROFISSIONAL`, `REGRA_CALENDARIO`, itens de serviço. | `G01` |
-| Cancelamentos e faltas | Reservas canceladas/faltas ÷ total de reservas, por mês. | `AGENDAMENTO` e histórico de status. | `G02` |
-| Atendimentos realizados | Contagem de atendimentos concluídos por profissional e dia. | `AGENDAMENTO`, `PROFISSIONAL`. | `G03` |
-| Estoque abaixo do mínimo | Produtos com saldo inferior ao mínimo na data da consulta. | `PRODUTO`, `MOVIMENTO_ESTOQUE`. | `G04` |
-| Conciliação do caixa | Valor conferido menos valor esperado por forma e fechamento. | `MOVIMENTO_CAIXA`, `FECHAMENTO_CAIXA`, `FECHAMENTO_FORMA`. | `G05` |
+| P1, situação da agenda | Quantidade e percentual de agendamentos por status. | `AGENDAMENTO`. | G01 |
+| P1, agenda detalhada | Agendamentos por data, profissional, cliente, serviços e valor contratado. | `AGENDAMENTO`, `CLIENTE`, `PROFISSIONAL`, `AGENDAMENTO_SERVICO`, `AGENDAMENTO_EXTRA`. | G02 |
+| P2, receita por profissional e serviço | Quantidade de atendimentos e receita de serviços concluídos. | `AGENDAMENTO`, `PROFISSIONAL`, `AGENDAMENTO_SERVICO`, `SERVICO`. | G03 |
+| P3, estoque abaixo do mínimo | Produtos com saldo inferior ao mínimo na data da consulta. | `PRODUTO`, `MOVIMENTO_ESTOQUE`. | G04 |
+| P3, conciliação do caixa | Valor esperado, conferido e diferença por forma de pagamento. | `FECHAMENTO_CAIXA`, `FECHAMENTO_FORMA`. | G05 |
 
-As consultas de auditoria `A01`… verificam regras como conflito de horários (RN09), pagamento e confirmação (RN11/RN18), integridade de estoque (RN13) e imutabilidade do caixa fechado (RN14). Um painel pode apresentar ocupação, horários de pico, cancelamentos, atendimentos, estoque e caixa. Análises preditivas de faltas ou recomendação de horários são possibilidades futuras, condicionadas à qualidade e ao volume dos dados e à governança de privacidade.
+As auditorias A01 a A04 verificam horários sobrepostos, confirmação sem pagamento integral, estoque negativo e caixa aberto duplicado. Um painel pode apresentar agenda, cancelamentos, atendimentos, estoque e caixa. Previsão de faltas ou recomendação de horários só deve ser considerada quando houver histórico suficiente e uma política de privacidade definida.
 
 ## 2. Modelo Lógico Relacional
 
-O modelo lógico é apresentado em [diagrama.png](diagrama.png), elaborado no brModelo. Ele contém tabelas, colunas e tipos, PK, FK e cardinalidades convertidas. As demais restrições de integridade estão no dicionário e no script SQL.
+O modelo lógico é apresentado em [diagrama do modelo lógico](diagramas/modelo-logico.png), elaborado no brModelo. Ele contém tabelas, colunas e tipos, PK, FK e cardinalidades convertidas. As demais restrições de integridade estão no dicionário e no script SQL.
 
 ## 3. Script SQL Completo
 
-O script MySQL do projeto fica em [`docs/script.sql`](docs/script.sql). Ele cria o banco e as tabelas, implementa PK/FK e restrições, carrega dados fictícios, demonstra consultas com `JOIN`, `UPDATE`, `DELETE`, consultas gerenciais `G01`–`G05` e auditorias `A01`… Cada consulta informa a pergunta respondida e a regra ou problema atendido.
+Os scripts MySQL 8.0.16 ou superior ficam em [`docs/`](docs/): [`script.sql`](docs/script.sql) cria o banco e as tabelas; [`massa-de-dados.sql`](docs/massa-de-dados.sql) carrega dados fictícios; e [`testes-e-consultas.sql`](docs/testes-e-consultas.sql) reúne demonstrações, as consultas gerenciais G01 a G05 e auditorias.
 
 ## 4. Massa de Dados
 
@@ -230,26 +259,28 @@ O relatório técnico é este `README.md`, na raiz da branch `main`. Os demais a
 
 | Artefato | Arquivo |
 |---|---|
-| Dicionário de Dados com atributos e restrições por coluna | `dicionario_de_dados.html` (para turma GTI, um `.md` separado do README) |
-| DER conceitual | `modelo_logico.png` |
-| Modelo lógico | `diagrama.png` |
-| Levantamento da organização | `levantamento/levantamento.md` |
-| Evidências do local e da entrevista | `levantamento/evidencias/` (JPG ou PNG) |
-| Script SQL e massa | `docs/script.sql` |
-| Apresentação | slides do pitch final |
+| Dicionário de Dados com atributos e restrições por coluna | [docs/dicionario-de-dados.html](docs/dicionario-de-dados.html) (para turma GTI, um `.md` separado do README) |
+| DER conceitual | [diagramas/der-conceitual.png](diagramas/der-conceitual.png) |
+| Modelo lógico | [diagramas/modelo-logico.png](diagramas/modelo-logico.png) |
+| Levantamento da organização | [levantamento/levantamento.md](levantamento/levantamento.md) |
+| Evidências do local e da entrevista | [levantamento/evidencias/](levantamento/evidencias/) (JPG ou PNG) |
+| Script SQL, massa e testes | [docs/](docs/) |
+| Apresentação | slides do pitch final (pendente de inclusão) |
 
 O histórico de commits registra o desenvolvimento ao longo do tempo e a contribuição dos integrantes com suas próprias contas do GitHub.
 
 ## 6. Uso de Inteligência Artificial
 
-O grupo declarou uso de Gemini e DeepSeek na organização do README, nos requisitos e no apoio à modelagem. ChatGPT foi usado na consolidação desta documentação.
+O grupo declarou uso de Gemini e DeepSeek na organização do README, nos requisitos e no apoio à modelagem. ChatGPT foi usado na consolidação desta documentação. A IA serviu para estruturar e revisar o material; não substitui a entrevista, a conferência dos scripts nem a validação das regras com a organização.
 
 | Ferramenta/etapa | Motivação e prompt | Resultado e revisão |
 |---|---|---|
-| Gemini e DeepSeek — documentação e modelagem | Organizar a documentação e propor requisitos/modelagem para o sistema de agendamento a partir das regras fornecidas para a barbearia. | A estrutura e as sugestões de modelagem foram revisadas pelo grupo. Sugestões com nomes, preços ou dados pessoais inventados foram descartadas. Registrar os prompts completos usados e as respostas efetivamente aproveitadas. |
-| ChatGPT — consolidação do relatório | Integrar informações do projeto, dicionário e estrutura dos artefatos finais em um README consistente. | A estrutura foi consolidada; parâmetros de operação devem ser comparados com o levantamento e validados pelo responsável antes da implantação. A IA não comprova os processos reais nem substitui a validação da equipe. |
+| DeepSeek, conversão do script | Converter a versão PostgreSQL para MySQL sem alterar tabelas ou relacionamentos. Prompt usado: "Meu colega fez o banco da Barbearia The Family em PostgreSQL. Consegue converter o SQL para MySQL sem mudar as tabelas e os relacionamentos?" | A conversão foi usada como apoio ao script MySQL. O grupo executou e validou os arquivos no MySQL. |
+| Gemini, revisão da documentação | Verificar pendências e coerência entre a documentação e o banco de dados. Prompt usado: "Analisa o README do projeto e me explica o que ainda falta fazer no trabalho da Barbearia The Family e se a documentação está coerente com o banco de dados." | A resposta serviu para revisar as pendências e a consistência da documentação. O grupo conferiu manualmente os arquivos antes de manter as alterações. |
+| Claude, script MySQL e DER conceitual | Apoiar a leitura do modelo lógico, do repositório e a conversão para DER no brModelo, notação Peter Chen. Prompts usados: "Como está esse arquivo do modelo lógico do meu projeto?" e "Esse é o arquivo SQL https://github.com/gustavofjose/BarbeariaTheFamily do projeto. Leia o README, preciso fazer o MODELO DER no brModelo Peter Chen, por onde eu começo?" | A resposta foi usada como apoio para revisar o modelo e orientar a montagem do DER. O grupo executou e validou os arquivos no MySQL. A revisão manual conferiu a compatibilidade entre o script, os diagramas e o dicionário. |
+| ChatGPT, consolidação do relatório | Integrar as informações já existentes no projeto, o dicionário e os artefatos finais em um README consistente. | O texto foi reestruturado. Regras sem confirmação foram marcadas como proposta ou pendência. |
 
-As fontes utilizadas para as regras operacionais são o levantamento da organização e o catálogo/processos informados pelo grupo. Informações legais, fiscais e sanitárias devem ser confirmadas com responsáveis competentes; sugestões da IA não são tratadas como confirmação desses requisitos.
+As fontes utilizadas foram o levantamento do grupo, a foto feita no local e os dados de identificação da organização. O grupo deve registrar as respostas do responsável e conferir informações fiscais e sanitárias com profissionais competentes. Um risco do uso de IA é transformar uma prática comum em fato da barbearia; por isso, parâmetros como sinal, prazo de cancelamento e tolerância estão sinalizados como pendentes de confirmação.
 
 ## 7. Apresentação Corporativa Final
 
