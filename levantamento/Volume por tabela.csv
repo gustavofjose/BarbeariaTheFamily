@@ -1,3 +1,20 @@
+/* ------------------------------------------------------------------
+   LEITURA DO RESULTADO - Volume por tabela
+
+   O que a consulta mostra: a quantidade de linhas carregadas em cada
+   uma das tabelas do banco depois da execução do script.sql e da
+   massa-de-dados.sql.
+
+   Para que serve: confirmar que a massa de dados fictícia foi carregada
+   por completo e que todas as áreas do modelo têm registros para as consultas
+   gerenciais (G01 a G05) e para as auditorias (A01 a A04): agenda, pagamentos,
+   produtos, compras, vendas, estoque e caixa.
+
+   Como ler: cada linha traz o nome da tabela e o total de registros, em
+   ordem alfabética. Tabelas de apoio, como regra_calendario e usuario_sistema,
+   têm poucas linhas. Tabelas transacionais, como agendamento e pagamento,
+   concentram o volume.
+   ------------------------------------------------------------------ */
 tabela,linhas
 agendamento,500
 agendamento_extra,0

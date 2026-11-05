@@ -1,3 +1,30 @@
+/* ------------------------------------------------------------------
+   LEITURA DO RESULTADO - G02. Agenda com serviços, adicionais e valor contratado
+
+   O que a consulta mostra: cada agendamento com data, horário, profissional,
+   cliente, status, serviços contratados, adicionais e o valor total
+   (serviços + adicionais). A consulta usa LIMIT 30, então são exibidos os
+   30 primeiros agendamentos em ordem de data e horário.
+
+   O que o resultado mostra:
+   - Período: 01/09/2026 a 03/09/2026 (30 agendamentos, ids 1 a 30).
+   - Dois profissionais, Thiago Moreira e Rafael Siqueira, com cinco
+     horários por dia cada (08h, 10h, 12h, 14h e 16h), 15 agendamentos por profissional.
+   - Todos os agendamentos são de "Corte Social", sem adicionais
+     (coluna adicionais = "-"), por isso o total contratado é 50.00 em todas as linhas.
+   - Status: 26 Concluido, 2 Faltou (ids 11 e 22) e 2 Cancelado (ids 13 e 26),
+     cobrindo os cenários de atendimento normal, falta e cancelamento.
+   - Nenhum profissional aparece com dois atendimentos no mesmo horário,
+     o que confirma a regra RN09 (sem sobreposição de agenda).
+
+   Como isso apoia o problema do negócio: a agenda detalhada permite
+   enxergar os horários que ficaram vagos por falta ou cancelamento (P1) e
+   o valor contratado de cada atendimento (P2).
+
+   Observação: o total_contratado é o valor contratado no agendamento,
+   inclusive nos que terminaram em falta ou cancelamento; não é a receita realizada.
+   ------------------------------------------------------------------ */
+   
 id_agendamento,data,hora_inicio,profissional,cliente,status,servicos,adicionais,total_contratado
 1,2026-09-01,08:00:00,"Thiago Moreira","Carlos Eduardo Nunes",Concluido,"Corte Social",-,50.00
 6,2026-09-01,08:00:00,"Rafael Siqueira","Felipe Andrade Costa",Concluido,"Corte Social",-,50.00
