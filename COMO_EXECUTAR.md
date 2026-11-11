@@ -1,6 +1,9 @@
 # Como executar e popular o banco (MySQL)
 
-Os arquivos `docs/script.sql`, `docs/massa-de-dados.sql` e `docs/testes-e-consultas.sql` formam a sequência de execução para **MySQL 8.0.16 ou superior**. A versão mínima é exigida porque só a partir dela o MySQL aplica as restrições `CHECK` do modelo. O banco usa InnoDB e `utf8mb4`.
+São dois arquivos para **MySQL 8.0.16 ou superior**. A versão mínima é exigida porque só a partir dela o MySQL aplica as restrições `CHECK` do modelo. O banco usa InnoDB e `utf8mb4`.
+
+- `docs/script.sql`: script completo. Cria o banco, as tabelas, as constraints e os gatilhos, carrega a massa de dados e executa os SELECT com JOIN, os UPDATE, os DELETE, as consultas gerenciais G01 a G11, as auditorias A01 a A07 e os testes T01 a T05.
+- `docs/massa-de-dados.sql`: a mesma carga de dados, em arquivo separado, para recarregar os dados sem recriar o banco.
 
 ## Antes de começar
 
@@ -17,35 +20,28 @@ Os arquivos `docs/script.sql`, `docs/massa-de-dados.sql` e `docs/testes-e-consul
 O `script.sql` cria o banco `barbearia_the_family` sozinho e já seleciona o banco com `USE`. Não é preciso criá-lo antes.
 
 1. Conecte ao servidor e abra uma aba de consulta (**File > Open SQL Script**).
-2. Abra `docs/script.sql` e execute o arquivo inteiro com o ícone do raio (**Execute**, `Ctrl+Shift+Enter`). Não use só o botão de executar a linha atual. Espere terminar sem erros no painel *Output*.
-3. Abra e execute `docs/massa-de-dados.sql` do mesmo jeito. Ele limpa as tabelas (`TRUNCATE`) e insere a massa fictícia respeitando os gatilhos.
-4. Abra e execute `docs/testes-e-consultas.sql`. Ele mostra o volume por tabela, as consultas gerenciais G01 a G05, as auditorias A01 a A04 e os testes de regras T01 a T05.
-5. Para confirmar que carregou, execute:
+2. Abra `docs/script.sql` e execute o arquivo inteiro com o ícone do raio (**Execute**, `Ctrl+Shift+Enter`). Não use só o botão de executar a linha atual.
+3. Espere terminar sem erros no painel *Output*. Cada consulta abre uma aba de resultado (*Result 1*, *Result 2*...) abaixo do editor, na ordem do arquivo: V01, S01, S02, U01 a U03, D01 e D02, G01 a G11, A01 a A07 e T01 a T05.
 
-```sql
-USE barbearia_the_family;
-SELECT COUNT(*) FROM cliente;
-SELECT COUNT(*) FROM agendamento;
-```
-
-O Workbench mostra um resultado por aba. Como o arquivo de testes tem várias consultas, procure as abas de resultado (*Result 1*, *Result 2*...) abaixo do editor.
+Para rodar só uma consulta de novo (por exemplo, na apresentação), selecione o bloco dela no editor e use **Execute** (`Ctrl+Shift+Enter`) apenas sobre a seleção. A consulta G09 usa `@data_referencia`; execute antes a linha `SET @data_referencia = '2026-11-11';`.
 
 ## Executar pela linha de comando (alternativa)
 
 Na pasta do projeto:
 
 ```bash
-mysql -u root -p --default-character-set=utf8mb4 < docs/script.sql
-mysql -u root -p --default-character-set=utf8mb4 < docs/massa-de-dados.sql
-mysql -u root -p --default-character-set=utf8mb4 -t < docs/testes-e-consultas.sql
+mysql -u root -p --default-character-set=utf8mb4 -t < docs/script.sql
 ```
 
-A opção `-t` formata os resultados em tabela.
+A opção `-t` formata os resultados em tabela. Para recarregar só os dados depois:
+
+```bash
+mysql -u root -p --default-character-set=utf8mb4 < docs/massa-de-dados.sql
+```
 
 ## Regras de execução
 
-- Execute os três arquivos **nesta ordem**.
-- O `script.sql` cria as tabelas sem `IF NOT EXISTS`. Rodá-lo duas vezes dá erro de tabela já existente. Para recomeçar do zero, apague o banco e repita os passos:
+- O `script.sql` cria as tabelas sem `IF NOT EXISTS`. Rodá-lo duas vezes dá erro de tabela já existente. Para recomeçar do zero, apague o banco e execute o script de novo:
 
 ```sql
 DROP DATABASE barbearia_the_family;
@@ -53,8 +49,8 @@ DROP DATABASE barbearia_the_family;
 
 Use isso apenas no banco do exercício. Não execute o `script.sql` em um servidor com dados que você queira preservar.
 - A `massa-de-dados.sql` pode ser reexecutada, pois começa limpando as tabelas.
-- Os testes de regras do `testes-e-consultas.sql` criam um procedimento temporário (`executar_testes_regras`), capturam os erros esperados e o removem no final. Não ficam registros inválidos no banco. Cada teste deve retornar `OK`.
-- As auditorias A01 a A04 devem retornar **zero violações**.
+- Os testes T01 a T05 criam um procedimento temporário (`executar_testes_regras`), capturam os erros esperados e o removem no final. Não ficam registros inválidos no banco. Cada teste deve retornar `OK`.
+- As auditorias A01 a A07 devem retornar **zero violações**.
 
 ## Eventos agendados
 

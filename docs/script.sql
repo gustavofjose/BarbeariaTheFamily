@@ -1,9 +1,25 @@
--- Barbearia The Family Hair — script oficial MySQL 8.0.16+
--- Modelo lógico, regras de integridade, gatilhos e trilha operacional.
+-- ============================================================================
+-- Barbearia The Family Hair — script completo MySQL 8.0.16+
+-- ============================================================================
+-- Executa do zero, em um banco vazio, nesta ordem:
+--   PARTE 1  CREATE DATABASE e CREATE TABLE (com PK, NOT NULL, DEFAULT e CHECK)
+--   PARTE 2  Índices UNIQUE e chaves estrangeiras (constraints)
+--   PARTE 3  Gatilhos, eventos e visão das regras de negócio cruzadas
+--   PARTE 4  INSERT INTO — carga da massa de dados fictícia
+--            (o mesmo conteúdo está em docs/massa-de-dados.sql, para recarregar os dados)
+--   PARTE 5  SELECT com JOIN (V01, S01, S02)
+--   PARTE 6  UPDATE (U01…U03)
+--   PARTE 7  DELETE (D01, D02)
+--   PARTE 8  Consultas gerenciais (G01…G11) — cada uma indica o problema (P1…P3) e o processo (PN01…PN14)
+--   PARTE 9  Consultas de auditoria (A01…A07) — cada uma indica a regra (RNxx) que verifica
+--   PARTE 10 Testes das regras (T01…T05)
 -- Requer InnoDB, utf8mb4 e MySQL 8.0.16+ (versão que aplica CHECK).
--- Executar em ambiente de desenvolvimento; os dados de massa ficam em arquivo separado.
--- Revisão: máquina de estados, imutabilidade, travas contra concorrência, eventos de expiração.
 -- Os EVENTs exigem event_scheduler=ON (SET GLOBAL event_scheduler = ON; requer privilégio).
+-- Para recomeçar: DROP DATABASE barbearia_the_family; e execute este arquivo de novo.
+
+-- ============================================================================
+-- PARTE 1 — CREATE DATABASE e CREATE TABLE
+-- ============================================================================
 
 SET NAMES utf8mb4;
 CREATE DATABASE IF NOT EXISTS `barbearia_the_family`
@@ -401,6 +417,9 @@ CREATE TABLE `documento_fiscal` (
   CONSTRAINT `ck_df_origem` CHECK ((id_agendamento IS NOT NULL) + (id_venda IS NOT NULL) + (id_compra IS NOT NULL) = 1)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ============================================================================
+-- PARTE 2 — Índices UNIQUE e chaves estrangeiras
+-- ============================================================================
 -- ---------------------------------------------------------------- Índices
 
 CREATE UNIQUE INDEX `uq_usuario_login` ON `usuario_sistema` (`identificador_login`);
@@ -553,6 +572,9 @@ ALTER TABLE `documento_fiscal` ADD CONSTRAINT `fk_df_agend` FOREIGN KEY (`id_age
 ALTER TABLE `documento_fiscal` ADD CONSTRAINT `fk_df_venda` FOREIGN KEY (`id_venda`) REFERENCES `venda` (`id_venda`);
 ALTER TABLE `documento_fiscal` ADD CONSTRAINT `fk_df_compra` FOREIGN KEY (`id_compra`) REFERENCES `compra` (`id_compra`);
 
+-- ============================================================================
+-- PARTE 3 — Gatilhos, eventos e visão (regras cruzadas)
+-- ============================================================================
 -- ------------------------------------------------------------ Regras cruzadas
 -- CHECK e FK não alcançam relações entre linhas/tabelas. Estes gatilhos
 -- implementam as regras operacionais declaradas no README e no dicionário.
@@ -1121,3 +1143,707 @@ SELECT p.id_produto, p.nome, p.unidade_medida,
  GROUP BY p.id_produto, p.nome, p.unidade_medida, p.estoque_minimo$$
 
 DELIMITER ;
+
+-- ============================================================================
+-- PARTE 4 — INSERT INTO: carga da massa de dados fictícia
+-- ============================================================================
+-- Cópia de docs/massa-de-dados.sql. Compras e vendas são concluídas pelas
+-- transições normais; os movimentos de estoque e caixa são gerados pelos gatilhos.
+
+USE `barbearia_the_family`;
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE documento_fiscal;
+TRUNCATE TABLE movimento_caixa;
+TRUNCATE TABLE movimento_estoque;
+TRUNCATE TABLE fechamento_forma;
+TRUNCATE TABLE fechamento_caixa;
+TRUNCATE TABLE conta_pagar;
+TRUNCATE TABLE avaliacao;
+TRUNCATE TABLE pagamento;
+TRUNCATE TABLE agendamento_extra;
+TRUNCATE TABLE agendamento_servico;
+TRUNCATE TABLE agendamento;
+TRUNCATE TABLE item_venda;
+TRUNCATE TABLE venda;
+TRUNCATE TABLE item_compra;
+TRUNCATE TABLE compra;
+TRUNCATE TABLE registro_higienizacao;
+TRUNCATE TABLE regra_calendario;
+TRUNCATE TABLE cliente;
+TRUNCATE TABLE profissional;
+TRUNCATE TABLE servico_extra;
+TRUNCATE TABLE servico;
+TRUNCATE TABLE produto;
+TRUNCATE TABLE fornecedor;
+TRUNCATE TABLE log_auditoria;
+TRUNCATE TABLE usuario_sistema;
+SET FOREIGN_KEY_CHECKS = 1;
+
+INSERT INTO usuario_sistema
+  (nome_exibicao, identificador_login, perfil, ativo, data_criacao, data_desativacao)
+VALUES
+  ('Ana Beatriz Lemos','admin.ana','Administrador',TRUE,'2026-08-01 09:00:00',NULL),
+  ('Camila Rocha','atend.camila','Atendimento',TRUE,'2026-08-01 09:10:00',NULL),
+  ('Juliana Prado','atend.juliana','Atendimento',TRUE,'2026-08-01 09:15:00',NULL),
+  ('Thiago Moreira','prof.thiago','Profissional',TRUE,'2026-08-01 09:20:00',NULL),
+  ('Diego Albuquerque','prof.diego','Profissional',FALSE,'2026-08-01 09:25:00','2026-10-10 08:00:00'),
+  ('Rafael Siqueira','prof.rafael','Profissional',TRUE,'2026-10-12 09:00:00',NULL);
+
+INSERT INTO profissional (nome, especialidade, telefone, ativo) VALUES
+  ('Thiago Moreira','Corte social e barba','(11) 95550-9001',TRUE),
+  ('Diego Albuquerque','Degradê e acabamento','(11) 95550-9002',FALSE),
+  ('Rafael Siqueira','Barboterapia e pigmentação','(11) 95550-9003',TRUE);
+
+INSERT INTO servico (nome, descricao, duracao, preco, ativo) VALUES
+  ('Corte Social','Corte tradicional na tesoura e máquina',40,50.00,TRUE),
+  ('Corte Degradê','Degradê na máquina com acabamento na navalha',40,55.00,TRUE),
+  ('Barba','Barba completa com toalha quente',30,35.00,TRUE),
+  ('Corte + Barba','Combo corte e barba',60,80.00,TRUE),
+  ('Corte Infantil','Corte para crianças até 12 anos',40,45.00,TRUE),
+  ('Acabamento (Pezinho)','Contorno e acabamento do corte',15,15.00,TRUE),
+  ('Corte Promoção Inauguração','Promoção encerrada',40,40.00,FALSE);
+
+INSERT INTO servico_extra (nome, descricao, preco, duracao, ativo) VALUES
+  ('Sobrancelha','Design de sobrancelha na navalha',15.00,10,TRUE),
+  ('Hidratação Capilar','Hidratação rápida com máscara',25.00,15,TRUE),
+  ('Pigmentação de Barba','Pigmentação para cobrir falhas',35.00,20,TRUE);
+
+INSERT INTO cliente
+  (nome, telefone, email, data_cadastro, ativo, aceita_marketing, data_consentimento_marketing)
+VALUES
+  ('Carlos Eduardo Nunes','(11) 95550-0001','carlos.nunes@example.com','2026-08-25 09:10:00',TRUE,TRUE,'2026-08-25 09:10:00'),
+  ('Mateus Ribeiro Lopes','(11) 95550-0002','mateus.lopes@example.com','2026-08-25 09:20:00',TRUE,FALSE,NULL),
+  ('Gabriel Santana Prado','(11) 95550-0003','gabriel.prado@example.com','2026-08-25 09:30:00',TRUE,TRUE,'2026-08-25 09:30:00'),
+  ('Lucas Henrique Barros','(11) 95550-0004','lucas.barros@example.com','2026-08-25 09:40:00',TRUE,FALSE,NULL),
+  ('Pedro Augusto Menezes','(11) 95550-0005','pedro.menezes@example.com','2026-08-25 09:50:00',TRUE,TRUE,'2026-08-25 09:50:00'),
+  ('Felipe Andrade Costa','(11) 95550-0006','felipe.costa@example.com','2026-08-25 10:00:00',TRUE,FALSE,NULL),
+  ('Bruno Vasconcelos Dias','(11) 95550-0007','bruno.dias@example.com','2026-08-25 10:10:00',TRUE,FALSE,NULL),
+  ('Rodrigo Tavares Neto','(11) 95550-0008','rodrigo.neto@example.com','2026-08-25 10:20:00',TRUE,FALSE,NULL),
+  ('André Luiz Cardoso','(11) 95550-0009','andre.cardoso@example.com','2026-08-25 10:30:00',TRUE,TRUE,'2026-08-25 10:30:00'),
+  ('Marcelo Pires Fontes','(11) 95550-0010','marcelo.fontes@example.com','2026-08-25 10:40:00',TRUE,FALSE,NULL);
+
+DELIMITER $$
+CREATE PROCEDURE popular_clientes_restantes()
+BEGIN
+  DECLARE i INT DEFAULT 11;
+  WHILE i <= 45 DO
+    INSERT INTO cliente (nome, telefone, email, data_cadastro, ativo, aceita_marketing, data_consentimento_marketing)
+    VALUES (CONCAT('Cliente Fictício ', i), CONCAT('(11) 95550-', LPAD(i,4,'0')),
+            CONCAT('cliente',i,'@example.com'), DATE_ADD('2026-08-25 11:00:00', INTERVAL i MINUTE),
+            IF(i = 40,FALSE,TRUE), IF(MOD(i,3)=0,TRUE,FALSE),
+            IF(MOD(i,3)=0,DATE_ADD('2026-08-25 11:00:00', INTERVAL i MINUTE),NULL));
+    SET i = i + 1;
+  END WHILE;
+END$$
+DELIMITER ;
+CALL popular_clientes_restantes();
+DROP PROCEDURE popular_clientes_restantes;
+
+INSERT INTO regra_calendario
+  (tipo_regra,dia_semana,data_especifica,situacao,hora_abertura,hora_fechamento,vigencia_inicio,vigencia_fim,motivo,ativo)
+VALUES
+  ('SEMANAL',1,NULL,'FECHADO',NULL,NULL,'2026-01-01',NULL,'Segunda-feira fechado',TRUE),
+  ('SEMANAL',2,NULL,'ABERTO','08:00:00','19:00:00','2026-01-01',NULL,NULL,TRUE),
+  ('SEMANAL',3,NULL,'ABERTO','08:00:00','19:00:00','2026-01-01',NULL,NULL,TRUE),
+  ('SEMANAL',4,NULL,'ABERTO','08:00:00','19:00:00','2026-01-01',NULL,NULL,TRUE),
+  ('SEMANAL',5,NULL,'ABERTO','08:00:00','19:00:00','2026-01-01',NULL,NULL,TRUE),
+  ('SEMANAL',6,NULL,'ABERTO','08:00:00','19:00:00','2026-01-01',NULL,NULL,TRUE),
+  ('SEMANAL',7,NULL,'FECHADO',NULL,NULL,'2026-01-01',NULL,'Domingo fechado',TRUE),
+  ('EXCECAO',NULL,'2026-10-12','ABERTO','09:00:00','14:00:00','2026-10-12','2026-10-12','Feriado com horário reduzido',TRUE),
+  ('EXCECAO',NULL,'2026-11-20','FECHADO',NULL,NULL,'2026-11-20','2026-11-20','Feriado',TRUE);
+
+INSERT INTO produto (nome,tipo_produto,unidade_medida,sku,descricao,preco_venda,ativo,estoque_minimo) VALUES
+  ('Pomada Modeladora Efeito Matte 150g','Revenda','un','POM-MAT-150','Fixação forte',42.90,TRUE,6),
+  ('Pomada Brilho Forte 150g','Revenda','un','POM-BRI-150','Alto brilho',39.90,TRUE,6),
+  ('Cera Modeladora 100g','Revenda','un','CER-MOD-100','Fixação média',34.90,TRUE,5),
+  ('Óleo para Barba 30ml','Revenda','un','OLE-BAR-030','Hidratação',49.90,TRUE,5),
+  ('Balm Pós-Barba 80g','Revenda','un','BAL-POS-080','Calmante',44.90,TRUE,4),
+  ('Shampoo para Barba 200ml','Revenda','un','SHA-BAR-200','Limpeza',36.90,TRUE,4),
+  ('Shampoo Anticaspa 250ml','Revenda','un','SHA-ANT-250','Controle de caspa',32.90,TRUE,4),
+  ('Gel Fixador Extra Forte 300g','Revenda','un','GEL-FIX-300','Fixação extra forte',19.90,TRUE,6),
+  ('Pente de Madeira','Revenda','un','PEN-MAD-001','Pente antiestático',24.90,TRUE,3),
+  ('Pó Texturizador 10g','Ambos','un','PO-TEX-010','Uso e revenda',29.90,TRUE,3),
+  ('Lâmina Descartável (cx c/ 100)','Insumo','cx','LAM-DES-100','Lâminas',NULL,TRUE,2),
+  ('Álcool 70% 1L','Insumo','l','ALC-070-1L','Desinfecção',NULL,TRUE,5);
+
+INSERT INTO fornecedor (nome_razao_social,documento_fiscal,telefone,email,ativo) VALUES
+  ('Distribuidora Fio de Navalha Ltda','10.000.001/0001-00','(11) 4000-0001','vendas@example.com',TRUE),
+  ('Cosméticos Barba Forte Comércio','10.000.002/0001-00','(11) 4000-0002','pedidos@example.com',TRUE),
+  ('Higiene Pro Suprimentos','10.000.003/0001-00','(11) 4000-0003','contato@example.com',TRUE);
+
+-- Compras começam em rascunho; a atualização para Recebida gera as entradas de estoque.
+INSERT INTO compra (id_fornecedor,id_usuario,data_pedido,status,observacao) VALUES
+  (1,1,'2026-08-25 10:00:00','Rascunho','Estoque inicial'),
+  (2,1,'2026-08-25 10:30:00','Rascunho','Estoque inicial de barba'),
+  (3,1,'2026-08-26 09:00:00','Rascunho','Insumos de higiene');
+INSERT INTO item_compra (id_compra,id_produto,quantidade,custo_unitario) VALUES
+  (1,1,30,24.00),(1,2,30,22.00),(1,3,30,19.00),(1,8,30,10.50),(1,9,30,12.00),(1,10,30,16.00),
+  (2,4,30,28.00),(2,5,30,25.00),(2,6,30,20.00),(2,7,30,18.00),
+  (3,11,10,85.00),(3,12,20,14.00);
+UPDATE compra c
+SET valor_total=(SELECT SUM(i.quantidade*i.custo_unitario) FROM item_compra i WHERE i.id_compra=c.id_compra)
+WHERE c.id_compra > 0;
+UPDATE compra SET status='Recebida',data_recebimento='2026-08-27 14:00:00' WHERE id_compra=1;
+UPDATE compra SET status='Recebida',data_recebimento='2026-08-28 11:00:00' WHERE id_compra=2;
+UPDATE compra SET status='Recebida',data_recebimento='2026-08-29 10:00:00' WHERE id_compra=3;
+
+DELIMITER $$
+CREATE PROCEDURE popular_agendamentos()
+BEGIN
+  DECLARE d DATE DEFAULT '2026-09-01';
+  DECLARE slot INT;
+  DECLARE seq INT DEFAULT 0;
+  DECLARE prof INT;
+  DECLARE cliente_id INT;
+  DECLARE agenda_id INT;
+  DECLARE pagamento_id INT;
+  DECLARE hora_i TIME;
+  DECLARE estado VARCHAR(30);
+  DECLARE v_serv INT;
+  DECLARE v_preco DECIMAL(10,2);
+  DECLARE v_dur INT;
+  DECLARE v_extra INT;
+  DECLARE v_preco_extra DECIMAL(10,2);
+  DECLARE v_dur_extra INT;
+  DECLARE v_total DECIMAL(10,2);
+  DECLARE v_forma VARCHAR(20);
+  WHILE d <= '2026-11-07' DO
+    IF DAYOFWEEK(d) BETWEEN 3 AND 7 THEN
+      SET slot = 0;
+      -- Cinco horários para cada um dos dois profissionais ativos: 500 reservas
+      -- em 50 dias de funcionamento (cerca de 50 por semana).
+      WHILE slot < 10 DO
+        SET seq = seq + 1;
+        SET prof = IF(slot < 5,1,3);
+        SET cliente_id = 1 + MOD(DATEDIFF(d,'2026-09-01')*10+slot,32);
+        SET hora_i = MAKETIME(8 + MOD(slot,5)*2,0,0);
+
+        -- Serviço principal: corte social é o mais comum, seguido de degradê e combo.
+        SET v_serv = CASE WHEN MOD(seq,23)=0 THEN 6
+                          ELSE CASE MOD(seq + DAYOFYEAR(d),10)
+                                 WHEN 4 THEN 2 WHEN 5 THEN 2
+                                 WHEN 6 THEN 3
+                                 WHEN 7 THEN 4 WHEN 8 THEN 4
+                                 WHEN 9 THEN 5
+                                 ELSE 1 END END;
+        SELECT preco, duracao INTO v_preco, v_dur FROM servico WHERE id_servico = v_serv;
+
+        -- Cerca de um em cada seis agendamentos inclui um adicional.
+        SET v_extra = IF(MOD(seq,6)=0, 1 + MOD(seq DIV 6,3), NULL);
+        SET v_preco_extra = 0;
+        SET v_dur_extra = 0;
+        IF v_extra IS NOT NULL THEN
+          SELECT preco, duracao INTO v_preco_extra, v_dur_extra FROM servico_extra WHERE id_extra = v_extra;
+        END IF;
+        SET v_total = v_preco + v_preco_extra;
+        SET v_forma = CASE MOD(seq,10) WHEN 0 THEN 'Credito' WHEN 1 THEN 'Credito'
+                                       WHEN 2 THEN 'Debito' WHEN 3 THEN 'Dinheiro'
+                                       ELSE 'Pix' END;
+
+        INSERT INTO agendamento
+          (id_cliente,id_profissional,id_regra_calendario,data,hora_inicio,hora_fim,status,politica_reserva_versao,politica_aceita_em,criado_em,expira_em)
+        VALUES (cliente_id,prof,DAYOFWEEK(d)-1,d,hora_i,ADDTIME(hora_i,SEC_TO_TIME((v_dur+v_dur_extra)*60)),'Aguardando_pagamento','v1.0',
+                TIMESTAMP(d,'08:00:00'),TIMESTAMP(d,'08:00:00'),TIMESTAMP(d,'08:10:00'));
+        SET agenda_id = LAST_INSERT_ID();
+        INSERT INTO agendamento_servico (id_agendamento,id_servico,preco_contratado,duracao_contratada)
+        VALUES (agenda_id,v_serv,v_preco,v_dur);
+        IF v_extra IS NOT NULL THEN
+          INSERT INTO agendamento_extra (id_agendamento,id_extra,preco_contratado,duracao_contratada)
+          VALUES (agenda_id,v_extra,v_preco_extra,v_dur_extra);
+        END IF;
+
+        SET estado = CASE WHEN MOD(seq,13)=0 AND MOD(seq,2)=1 THEN 'Expirado'
+                          WHEN MOD(seq,13)=0 THEN 'Cancelado'
+                          WHEN MOD(seq,11)=0 THEN 'Faltou'
+                          ELSE 'Concluido' END;
+        IF estado = 'Expirado' THEN
+          -- Pagamento recusado: a reserva expira e o horário é liberado (RN18).
+          INSERT INTO pagamento (id_agendamento,tipo_operacao,forma_pagamento,valor,status,criado_em)
+          VALUES (agenda_id,'Cobranca','Pix',v_total,'Falhou',TIMESTAMP(d,'08:02:00'));
+          UPDATE agendamento SET status='Cancelado',cancelado_em=TIMESTAMP(d,'08:10:00'),
+                 motivo_cancelamento='Reserva expirada sem pagamento' WHERE id_agendamento=agenda_id;
+        ELSE
+          INSERT INTO pagamento (id_agendamento,tipo_operacao,forma_pagamento,valor,status,criado_em,confirmado_em,referencia_provedor,chave_idempotencia)
+          VALUES (agenda_id,'Cobranca',v_forma,v_total,'Pago',TIMESTAMP(d,'08:02:00'),TIMESTAMP(d,'08:03:00'),
+                  CONCAT('PAG-',agenda_id),CONCAT('idem-',agenda_id));
+          SET pagamento_id=LAST_INSERT_ID();
+          INSERT INTO movimento_caixa (id_usuario,id_pagamento,tipo,forma_pagamento,valor,data_hora)
+          VALUES (2,pagamento_id,'Entrada',v_forma,v_total,TIMESTAMP(d,'08:03:00'));
+          UPDATE agendamento SET status='Confirmado',confirmado_em=TIMESTAMP(d,'08:03:00') WHERE id_agendamento=agenda_id;
+          IF estado = 'Cancelado' THEN
+            -- Cliente cancelou com antecedência: o pagamento original fica e o estorno é um novo lançamento (RN12).
+            UPDATE agendamento SET status='Cancelado',cancelado_em=TIMESTAMP(d,'08:30:00'),
+                   motivo_cancelamento='Cancelado pelo cliente com antecedência' WHERE id_agendamento=agenda_id;
+            INSERT INTO pagamento (id_agendamento,id_pagamento_origem,tipo_operacao,forma_pagamento,valor,status,criado_em,confirmado_em,referencia_provedor,chave_idempotencia)
+            VALUES (agenda_id,pagamento_id,'Estorno',v_forma,v_total,'Pago',TIMESTAMP(d,'08:31:00'),TIMESTAMP(d,'08:32:00'),
+                    CONCAT('EST-',agenda_id),CONCAT('idem-est-',agenda_id));
+            INSERT INTO movimento_caixa (id_usuario,id_pagamento,tipo,forma_pagamento,valor,data_hora,motivo)
+            VALUES (2,LAST_INSERT_ID(),'Estorno',v_forma,v_total,TIMESTAMP(d,'08:32:00'),'Estorno de agendamento cancelado');
+          ELSEIF estado = 'Concluido' THEN
+            UPDATE agendamento SET status='Concluido',checkin_em=TIMESTAMP(d,hora_i) WHERE id_agendamento=agenda_id;
+            IF MOD(seq,3)=0 THEN
+              INSERT INTO avaliacao (id_agendamento,nota,comentario,data_avaliacao)
+              VALUES (agenda_id,
+                      CASE MOD(seq,7) WHEN 0 THEN 3 WHEN 1 THEN 4 WHEN 2 THEN 4 ELSE 5 END,
+                      CASE MOD(seq,7) WHEN 0 THEN 'Atendimento atrasou um pouco.'
+                                      WHEN 1 THEN 'Bom corte.' WHEN 2 THEN 'Gostei, volto sim.'
+                                      ELSE 'Ótimo atendimento, recomendo!' END,
+                      TIMESTAMP(d,ADDTIME(hora_i,'01:30:00')));
+            END IF;
+          ELSE
+            UPDATE agendamento SET status='Faltou' WHERE id_agendamento=agenda_id;
+          END IF;
+        END IF;
+        SET slot=slot+1;
+      END WHILE;
+    END IF;
+    SET d=DATE_ADD(d,INTERVAL 1 DAY);
+  END WHILE;
+END$$
+DELIMITER ;
+CALL popular_agendamentos();
+DROP PROCEDURE popular_agendamentos;
+
+DELIMITER $$
+CREATE PROCEDURE popular_vendas()
+BEGIN
+  DECLARE i INT DEFAULT 1;
+  DECLARE venda_id INT;
+  DECLARE data_venda DATETIME;
+  DECLARE v_prod INT;
+  DECLARE v_qtd INT;
+  DECLARE v_preco DECIMAL(10,2);
+  DECLARE v_desc DECIMAL(10,2);
+  DECLARE v_forma VARCHAR(20);
+  WHILE i <= 30 DO
+    SET data_venda=DATE_ADD('2026-09-02 10:00:00',INTERVAL i*2 DAY);
+    -- A pomada matte é o item mais vendido e termina abaixo do estoque mínimo;
+    -- as demais vendas se distribuem entre os outros produtos de revenda.
+    SET v_prod = IF(MOD(i,2)=0, 1, 2 + MOD(i,9));
+    SET v_qtd  = IF(MOD(i,2)=0, 2, 1);
+    SELECT preco_venda INTO v_preco FROM produto WHERE id_produto = v_prod;
+    SET v_desc = IF(MOD(i,7)=0, 5.00, NULL);
+    SET v_forma = CASE MOD(i,4) WHEN 0 THEN 'Dinheiro' WHEN 1 THEN 'Pix' WHEN 2 THEN 'Debito' ELSE 'Credito' END;
+    INSERT INTO venda (id_usuario,id_cliente,data_hora,status,valor_total,forma_pagamento)
+    VALUES (2,IF(MOD(i,5)=0,NULL,1+MOD(i,32)),data_venda,'Aberta',0,NULL);
+    SET venda_id=LAST_INSERT_ID();
+    INSERT INTO item_venda (id_venda,id_produto,quantidade,preco_unitario,desconto_unitario)
+    VALUES (venda_id,v_prod,v_qtd,v_preco,v_desc);
+    UPDATE venda SET status='Concluida',valor_total=v_qtd*(v_preco-COALESCE(v_desc,0)),forma_pagamento=v_forma WHERE id_venda=venda_id;
+    INSERT INTO movimento_caixa (id_usuario,id_venda,tipo,forma_pagamento,valor,data_hora)
+    VALUES (2,venda_id,'Entrada',v_forma,v_qtd*(v_preco-COALESCE(v_desc,0)),data_venda);
+    SET i=i+1;
+  END WHILE;
+END$$
+DELIMITER ;
+CALL popular_vendas();
+DROP PROCEDURE popular_vendas;
+
+INSERT INTO venda (id_usuario,id_cliente,data_hora,status,valor_total,forma_pagamento)
+VALUES (2,7,'2026-11-02 18:40:00','Aberta',49.90,NULL);
+SET @venda_aberta=LAST_INSERT_ID();
+INSERT INTO item_venda (id_venda,id_produto,quantidade,preco_unitario,desconto_unitario)
+VALUES (@venda_aberta,4,1,49.90,NULL);
+
+INSERT INTO registro_higienizacao (id_usuario,data_hora,item_area,etapa,metodo,produto_lote,resultado,observacao)
+VALUES (4,'2026-10-30 18:30:00','Máquinas de corte e navalhas','Desinfeccao','Pulverização de álcool 70%','ALC70-L2610','Concluido',NULL);
+SET @higi=LAST_INSERT_ID();
+INSERT INTO movimento_estoque
+  (id_produto,id_usuario,id_registro_higienizacao,tipo,direcao_ajuste,quantidade,custo_unitario,data_hora,motivo)
+VALUES (12,4,@higi,'Saida',NULL,0.250,NULL,'2026-10-30 18:40:00',NULL);
+INSERT INTO movimento_estoque
+  (id_produto,id_usuario,tipo,direcao_ajuste,quantidade,custo_unitario,data_hora,motivo)
+VALUES (4,1,'Ajuste','Saida',1,NULL,'2026-10-20 17:00:00','Frasco avariado no transporte');
+
+INSERT INTO conta_pagar (id_fornecedor,id_compra,id_usuario,descricao,categoria,valor,data_vencimento,status)
+VALUES (1,1,1,'Compra #1 - Distribuidora','Fornecedor',2587.00,'2026-09-05','Aberta'),
+       (NULL,NULL,1,'Aluguel - setembro/2026','Aluguel',2400.00,'2026-09-05','Aberta'),
+       (NULL,NULL,2,'Material de limpeza','Limpeza',45.90,'2026-09-17','Aberta');
+UPDATE conta_pagar SET status='Paga',data_baixa='2026-09-04 09:00:00',forma_baixa='Pix' WHERE id_conta=1;
+UPDATE conta_pagar SET status='Paga',data_baixa='2026-09-04 09:10:00',forma_baixa='Pix' WHERE id_conta=2;
+UPDATE conta_pagar SET status='Paga',data_baixa='2026-09-17 11:00:00',forma_baixa='Dinheiro' WHERE id_conta=3;
+-- Contas de outubro e novembro: uma paga, uma atrasada e uma ainda a vencer (cenários do G09).
+INSERT INTO conta_pagar (id_fornecedor,id_compra,id_usuario,descricao,categoria,valor,data_vencimento,status)
+VALUES (NULL,NULL,1,'Aluguel - outubro/2026','Aluguel',2400.00,'2026-10-05','Aberta'),
+       (NULL,NULL,1,'Aluguel - novembro/2026','Aluguel',2400.00,'2026-11-05','Atrasada'),
+       (NULL,NULL,1,'Energia elétrica - novembro/2026','Energia',318.40,'2026-11-20','Aberta');
+UPDATE conta_pagar SET status='Paga',data_baixa='2026-10-05 09:00:00',forma_baixa='Pix' WHERE id_conta=4;
+
+-- O fechamento é ligado enquanto está aberto; depois é encerrado e um novo caixa é aberto.
+INSERT INTO fechamento_caixa (id_usuario,aberto_em,saldo_abertura,status) VALUES (1,'2026-09-01 08:00:00',200.00,'Aberto');
+SET @fechamento=LAST_INSERT_ID();
+UPDATE movimento_caixa SET id_fechamento=@fechamento
+WHERE id_movimento > 0 AND data_hora < '2026-11-01 00:00:00';
+-- Na contagem do dinheiro faltaram R$ 12,50 (troco); as demais formas conferem com o extrato.
+INSERT INTO fechamento_forma (id_fechamento,forma_pagamento,valor_esperado,valor_conferido)
+SELECT @fechamento,forma_pagamento,SUM(CASE WHEN tipo='Entrada' THEN valor WHEN tipo IN ('Saida','Estorno') THEN -valor ELSE 0 END),
+       SUM(CASE WHEN tipo='Entrada' THEN valor WHEN tipo IN ('Saida','Estorno') THEN -valor ELSE 0 END)
+       - IF(forma_pagamento='Dinheiro',12.50,0)
+FROM movimento_caixa WHERE id_fechamento=@fechamento GROUP BY forma_pagamento;
+UPDATE fechamento_caixa SET status='Fechado',fechado_em='2026-10-31 19:30:00' WHERE id_fechamento=@fechamento;
+INSERT INTO fechamento_caixa (id_usuario,aberto_em,saldo_abertura,status) VALUES (2,'2026-11-02 08:00:00',200.00,'Aberto');
+
+INSERT INTO documento_fiscal (id_agendamento,tipo,numero,serie,emitido_em,status,localizador_arquivo)
+SELECT id_agendamento,'NFS-e',LPAD(id_agendamento,6,'0'),'A1',TIMESTAMP(data,hora_fim),'Autorizado',CONCAT('nfse/ag-',id_agendamento,'.pdf')
+FROM agendamento WHERE status='Concluido' AND MOD(id_agendamento,10)=0;
+INSERT INTO documento_fiscal (id_venda,tipo,numero,serie,chave_acesso,emitido_em,status,localizador_arquivo)
+SELECT id_venda,'NFC-e',LPAD(id_venda,6,'0'),'1',CONCAT('352610',LPAD(id_venda,38,'0')),data_hora,'Autorizado',CONCAT('nfce/venda-',id_venda,'.xml')
+FROM venda WHERE status='Concluida' AND MOD(id_venda,5)=0;
+
+INSERT INTO log_auditoria
+  (id_usuario,data_hora,acao,componente,recurso,resultado,identificador_registro,origem,id_correlacao,data_expurgo_prevista)
+VALUES
+  (2,'2026-09-01 07:55:00','LOGIN','APLICACAO','sessao','SUCESSO',NULL,'app-web','sess-20260901','2031-08-31'),
+  (1,'2026-10-10 08:00:00','DML','APLICACAO','usuario_sistema','SUCESSO','5','app-web','usr-5','2031-10-09'),
+  (1,'2026-10-31 20:00:00','EXPORTACAO','APLICACAO','fechamento_caixa','SUCESSO',CAST(@fechamento AS CHAR),'app-web','caixa-1','2031-10-30');
+
+ANALYZE TABLE cliente, agendamento, pagamento, venda, movimento_estoque, movimento_caixa;
+
+-- ============================================================================
+-- PARTE 5 — SELECT com JOIN (consultas que cruzam várias tabelas)
+-- ============================================================================
+-- A massa usa datas fixas (set/2026 a nov/2026). A data de referência abaixo
+-- deixa os resultados reproduzíveis, sem depender do dia em que o script roda.
+SET @data_referencia = '2026-11-11';
+
+-- V01 — Quantos registros cada tabela recebeu na carga?
+-- Atende: seção 4 do README (volume da massa de dados)
+SELECT tabela, linhas FROM (
+  SELECT 'agendamento' AS tabela,COUNT(*) AS linhas FROM agendamento UNION ALL
+  SELECT 'agendamento_servico',COUNT(*) FROM agendamento_servico UNION ALL
+  SELECT 'agendamento_extra',COUNT(*) FROM agendamento_extra UNION ALL
+  SELECT 'avaliacao',COUNT(*) FROM avaliacao UNION ALL
+  SELECT 'cliente',COUNT(*) FROM cliente UNION ALL
+  SELECT 'compra',COUNT(*) FROM compra UNION ALL
+  SELECT 'conta_pagar',COUNT(*) FROM conta_pagar UNION ALL
+  SELECT 'documento_fiscal',COUNT(*) FROM documento_fiscal UNION ALL
+  SELECT 'fechamento_caixa',COUNT(*) FROM fechamento_caixa UNION ALL
+  SELECT 'fechamento_forma',COUNT(*) FROM fechamento_forma UNION ALL
+  SELECT 'fornecedor',COUNT(*) FROM fornecedor UNION ALL
+  SELECT 'item_compra',COUNT(*) FROM item_compra UNION ALL
+  SELECT 'item_venda',COUNT(*) FROM item_venda UNION ALL
+  SELECT 'log_auditoria',COUNT(*) FROM log_auditoria UNION ALL
+  SELECT 'movimento_caixa',COUNT(*) FROM movimento_caixa UNION ALL
+  SELECT 'movimento_estoque',COUNT(*) FROM movimento_estoque UNION ALL
+  SELECT 'pagamento',COUNT(*) FROM pagamento UNION ALL
+  SELECT 'produto',COUNT(*) FROM produto UNION ALL
+  SELECT 'profissional',COUNT(*) FROM profissional UNION ALL
+  SELECT 'registro_higienizacao',COUNT(*) FROM registro_higienizacao UNION ALL
+  SELECT 'regra_calendario',COUNT(*) FROM regra_calendario UNION ALL
+  SELECT 'servico',COUNT(*) FROM servico UNION ALL
+  SELECT 'servico_extra',COUNT(*) FROM servico_extra UNION ALL
+  SELECT 'usuario_sistema',COUNT(*) FROM usuario_sistema UNION ALL
+  SELECT 'venda',COUNT(*) FROM venda
+) AS volumes ORDER BY tabela;
+
+-- S01 — Qual é o histórico de atendimentos e pagamentos do cliente 1?
+-- Atende: P2 (histórico único de atendimentos e pagamentos) — PN04, PN06
+SELECT c.nome AS cliente, a.id_agendamento, a.data, a.hora_inicio, p.nome AS profissional,
+       s.nome AS servico, ags.preco_contratado, a.status AS status_agendamento,
+       pg.forma_pagamento, pg.tipo_operacao, pg.valor AS valor_pago, pg.status AS status_pagamento
+FROM cliente c
+JOIN agendamento a           ON a.id_cliente = c.id_cliente
+JOIN profissional p          ON p.id_profissional = a.id_profissional
+JOIN agendamento_servico ags ON ags.id_agendamento = a.id_agendamento
+JOIN servico s               ON s.id_servico = ags.id_servico
+LEFT JOIN pagamento pg       ON pg.id_agendamento = a.id_agendamento
+WHERE c.id_cliente = 1
+ORDER BY a.data, a.hora_inicio, pg.criado_em;
+
+-- S02 — Quais produtos foram comprados de cada fornecedor, com quantidade e custo?
+-- Atende: P3 (compras e estoque) — PN10
+SELECT f.nome_razao_social AS fornecedor, co.id_compra, DATE(co.data_pedido) AS pedido,
+       DATE(co.data_recebimento) AS recebimento, co.status, pr.nome AS produto,
+       ic.quantidade, ic.custo_unitario, ic.quantidade * ic.custo_unitario AS subtotal
+FROM compra co
+JOIN fornecedor f   ON f.id_fornecedor = co.id_fornecedor
+JOIN item_compra ic ON ic.id_compra = co.id_compra
+JOIN produto pr     ON pr.id_produto = ic.id_produto
+ORDER BY co.id_compra, pr.nome;
+
+-- ============================================================================
+-- PARTE 6 — UPDATE
+-- ============================================================================
+
+-- U01 — Atualizar o e-mail de um cliente que pediu correção do cadastro.
+-- Atende: RF01 — PN01 (data_atualizacao é preenchida automaticamente)
+UPDATE cliente SET email = 'cliente41.novo@example.com' WHERE id_cliente = 41;
+SELECT id_cliente, nome, email, data_atualizacao FROM cliente WHERE id_cliente = 41;
+
+-- U02 — Inativar um serviço adicional que saiu do catálogo, sem apagar o histórico.
+-- Atende: RN08 — PN02
+UPDATE servico_extra SET ativo = FALSE WHERE id_extra = 3;
+SELECT id_extra, nome, ativo FROM servico_extra ORDER BY id_extra;
+
+-- U03 — Reajustar em 10% o preço de venda do óleo para barba.
+-- Atende: RF08 — PN09 (vendas antigas mantêm o preço praticado em ITEM_VENDA)
+UPDATE produto SET preco_venda = ROUND(preco_venda * 1.10, 2) WHERE id_produto = 4;
+SELECT id_produto, nome, preco_venda FROM produto WHERE id_produto = 4;
+
+-- ============================================================================
+-- PARTE 7 — DELETE
+-- ============================================================================
+-- Movimentos de caixa/estoque, pagamentos e logs não podem ser apagados
+-- (gatilhos, RN12 e RN14). Só cadastros sem histórico são removidos.
+
+-- D01 — Excluir o cadastro de um cliente que nunca agendou nem comprou (pedido do titular).
+-- Atende: RN17 (LGPD) — PN14
+DELETE FROM cliente
+WHERE id_cliente = 45
+  AND NOT EXISTS (SELECT 1 FROM agendamento a WHERE a.id_cliente = 45)
+  AND NOT EXISTS (SELECT 1 FROM venda v WHERE v.id_cliente = 45);
+SELECT COUNT(*) AS cliente_45_restante FROM cliente WHERE id_cliente = 45;
+
+-- D02 — Remover a exceção de calendário de 20/11/2026, lançada por engano e sem agendamentos.
+-- Atende: RN04 — PN03
+DELETE FROM regra_calendario
+WHERE id_regra_calendario = 9
+  AND NOT EXISTS (SELECT 1 FROM agendamento a WHERE a.id_regra_calendario = 9);
+SELECT id_regra_calendario, tipo_regra, data_especifica, situacao FROM regra_calendario ORDER BY id_regra_calendario;
+
+-- ============================================================================
+-- PARTE 8 — Consultas gerenciais (G01…G11)
+-- ============================================================================
+
+-- G01 — Qual é a situação dos agendamentos (concluídos, cancelados, faltas)?
+-- Atende: P1 (cancelamentos, atrasos e faltas desorganizam a agenda) — PN05, PN08
+SELECT status, COUNT(*) AS quantidade,
+       ROUND(100*COUNT(*)/(SELECT COUNT(*) FROM agendamento),1) AS percentual
+FROM agendamento GROUP BY status ORDER BY quantidade DESC;
+
+-- G02 — Como está a agenda por data e profissional, com serviços, adicionais e valor contratado?
+-- Atende: P1 (organização dos horários) — PN02, PN03
+SELECT a.id_agendamento,a.data,a.hora_inicio,p.nome AS profissional,c.nome AS cliente,a.status,
+       GROUP_CONCAT(DISTINCT s.nome ORDER BY s.nome SEPARATOR ' + ') AS servicos,
+       COALESCE(GROUP_CONCAT(DISTINCT e.nome ORDER BY e.nome SEPARATOR ', '),'-') AS adicionais,
+       (SELECT SUM(x.preco_contratado) FROM agendamento_servico x WHERE x.id_agendamento=a.id_agendamento)
+       +COALESCE((SELECT SUM(ae.preco_contratado)
+          FROM agendamento_extra ae WHERE ae.id_agendamento=a.id_agendamento),0) AS total_contratado
+FROM agendamento a
+JOIN cliente c ON c.id_cliente=a.id_cliente
+JOIN profissional p ON p.id_profissional=a.id_profissional
+JOIN agendamento_servico ags ON ags.id_agendamento=a.id_agendamento
+JOIN servico s ON s.id_servico=ags.id_servico
+LEFT JOIN agendamento_extra age ON age.id_agendamento=a.id_agendamento
+LEFT JOIN servico_extra e ON e.id_extra=age.id_extra
+GROUP BY a.id_agendamento,a.data,a.hora_inicio,p.nome,c.nome,a.status
+ORDER BY a.data,a.hora_inicio LIMIT 30;
+
+-- G03 — Quanto cada profissional faturou por serviço e qual a nota média recebida?
+-- Atende: P2 (histórico de atendimentos e receita) — PN06, PN13
+SELECT p.nome AS profissional,s.nome AS servico,COUNT(DISTINCT a.id_agendamento) AS atendimentos,
+       SUM(ags.preco_contratado) AS receita_servicos,ROUND(AVG(av.nota),2) AS nota_media
+FROM agendamento a
+JOIN profissional p ON p.id_profissional=a.id_profissional
+JOIN agendamento_servico ags ON ags.id_agendamento=a.id_agendamento
+JOIN servico s ON s.id_servico=ags.id_servico
+LEFT JOIN avaliacao av ON av.id_agendamento=a.id_agendamento
+WHERE a.status='Concluido'
+GROUP BY p.nome,s.nome ORDER BY receita_servicos DESC;
+
+-- G04 — Quais produtos estão abaixo do estoque mínimo hoje?
+-- Atende: P3 (controle de estoque) — PN09, PN10
+SELECT id_produto,nome,unidade_medida,saldo,estoque_minimo,
+       estoque_minimo-saldo AS quantidade_a_repor
+FROM vw_saldo_estoque
+WHERE estoque_minimo IS NOT NULL AND saldo<estoque_minimo
+ORDER BY quantidade_a_repor DESC;
+
+-- G05 — No fechamento de caixa, quanto era esperado, quanto foi conferido e qual a diferença por forma de pagamento?
+-- Atende: P3 (controle do caixa) — PN11
+SELECT f.id_fechamento,DATE(f.fechado_em) AS fechamento,ff.forma_pagamento,
+       ff.valor_esperado,ff.valor_conferido,ff.diferenca
+FROM fechamento_caixa f JOIN fechamento_forma ff ON ff.id_fechamento=f.id_fechamento
+ORDER BY f.id_fechamento,ff.forma_pagamento;
+
+-- G06 — Quanto entrou líquido por forma de pagamento, descontando estornos?
+-- Atende: P2 (histórico de pagamentos) — PN04, PN08
+SELECT forma_pagamento,
+       SUM(CASE WHEN tipo_operacao='Cobranca' THEN valor ELSE -valor END) AS valor_liquido,
+       SUM(tipo_operacao='Cobranca') AS cobrancas,
+       SUM(tipo_operacao='Estorno') AS estornos
+FROM pagamento WHERE status='Pago'
+GROUP BY forma_pagamento ORDER BY valor_liquido DESC;
+
+-- G07 — Quais produtos mais vendem no balcão e quanto cada um faturou?
+-- Atende: P3 (venda de produtos e saída de estoque) — PN09
+SELECT p.nome AS produto,SUM(iv.quantidade) AS unidades_vendidas,
+       SUM(iv.quantidade*(iv.preco_unitario-COALESCE(iv.desconto_unitario,0))) AS receita_balcao
+FROM item_venda iv
+JOIN venda v ON v.id_venda=iv.id_venda
+JOIN produto p ON p.id_produto=iv.id_produto
+WHERE v.status='Concluida'
+GROUP BY p.id_produto,p.nome ORDER BY receita_balcao DESC;
+
+-- G08 — KPI: qual a taxa mensal de faltas e cancelamentos? (meta: até 10% ao mês)
+-- Atende: P1 (faltas e cancelamentos) — PN08 — fórmula: (faltas + cancelados) / agendamentos do mês
+SELECT DATE_FORMAT(data,'%Y-%m') AS mes,
+       COUNT(*) AS agendamentos,
+       SUM(status='Faltou') AS faltas,
+       SUM(status='Cancelado') AS cancelados,
+       ROUND(100*SUM(status IN ('Faltou','Cancelado'))/COUNT(*),1) AS taxa_perda_pct,
+       IF(100*SUM(status IN ('Faltou','Cancelado'))/COUNT(*) <= 10,'Dentro da meta','Acima da meta') AS situacao
+FROM agendamento
+GROUP BY DATE_FORMAT(data,'%Y-%m') ORDER BY mes;
+
+-- G09 — Quais contas a pagar estão atrasadas ou vencem nos próximos 15 dias?
+-- Atende: P3 (contas a pagar) — PN11
+SELECT cp.id_conta, cp.descricao, cp.categoria, COALESCE(f.nome_razao_social,'-') AS fornecedor,
+       cp.valor, cp.data_vencimento, cp.status,
+       DATEDIFF(@data_referencia, cp.data_vencimento) AS dias_em_atraso
+FROM conta_pagar cp
+LEFT JOIN fornecedor f ON f.id_fornecedor = cp.id_fornecedor
+WHERE cp.status IN ('Aberta','Atrasada')
+  AND cp.data_vencimento <= @data_referencia + INTERVAL 15 DAY
+ORDER BY cp.data_vencimento;
+
+-- G10 — KPI: quantos atendimentos cada profissional conclui por dia trabalhado? (meta: 8 por dia — RN06)
+-- Atende: P1 (aproveitamento da agenda) — PN03, PN06 — fórmula: concluídos / dias com atendimento, por mês
+SELECT DATE_FORMAT(a.data,'%Y-%m') AS mes, p.nome AS profissional,
+       COUNT(*) AS concluidos,
+       COUNT(DISTINCT a.data) AS dias_trabalhados,
+       ROUND(COUNT(*)/COUNT(DISTINCT a.data),2) AS atendimentos_por_dia,
+       ROUND(100*(COUNT(*)/COUNT(DISTINCT a.data))/8,1) AS pct_da_meta
+FROM agendamento a
+JOIN profissional p ON p.id_profissional = a.id_profissional
+WHERE a.status = 'Concluido'
+GROUP BY DATE_FORMAT(a.data,'%Y-%m'), p.nome
+ORDER BY mes, profissional;
+
+-- G11 — KPI: qual o ticket médio e a receita mensal dos atendimentos concluídos?
+-- Atende: P2 (receita de atendimentos) — PN05, PN13 — fórmula: receita de serviços e adicionais / atendimentos concluídos
+SELECT DATE_FORMAT(a.data,'%Y-%m') AS mes,
+       COUNT(*) AS atendimentos,
+       SUM(t.total) AS receita,
+       ROUND(SUM(t.total)/COUNT(*),2) AS ticket_medio
+FROM agendamento a
+JOIN (SELECT id_agendamento, SUM(preco_contratado) AS total
+        FROM (SELECT id_agendamento, preco_contratado FROM agendamento_servico
+              UNION ALL
+              SELECT id_agendamento, preco_contratado FROM agendamento_extra) itens
+       GROUP BY id_agendamento) t ON t.id_agendamento = a.id_agendamento
+WHERE a.status = 'Concluido'
+GROUP BY DATE_FORMAT(a.data,'%Y-%m') ORDER BY mes;
+
+-- ============================================================================
+-- PARTE 9 — Consultas de auditoria (A01…A07): o resultado esperado é 0 violações
+-- ============================================================================
+
+-- A01 — Algum profissional tem dois agendamentos ativos com horários sobrepostos?
+-- Verifica: RN09
+SELECT 'A01 - horários sobrepostos' AS auditoria, COUNT(*) AS violacoes
+FROM agendamento a
+JOIN agendamento b ON a.id_agendamento<b.id_agendamento AND a.id_profissional=b.id_profissional
+ AND a.data=b.data AND a.status<>'Cancelado' AND b.status<>'Cancelado'
+ AND a.hora_inicio<b.hora_fim AND a.hora_fim>b.hora_inicio;
+
+-- A02 — Existe agendamento confirmado, concluído ou com falta sem pagamento integral?
+-- Verifica: RN02 e RN11
+SELECT 'A02 - confirmado sem pagamento integral' AS auditoria, COUNT(*) AS violacoes
+FROM agendamento a
+WHERE a.status IN ('Confirmado','Concluido','Faltou')
+  AND COALESCE((SELECT SUM(CASE WHEN p.tipo_operacao='Cobranca' THEN p.valor ELSE -p.valor END)
+                FROM pagamento p WHERE p.id_agendamento=a.id_agendamento AND p.status='Pago'),0)
+      < (SELECT COALESCE(SUM(preco_contratado),0) FROM agendamento_servico s WHERE s.id_agendamento=a.id_agendamento)
+      + (SELECT COALESCE(SUM(preco_contratado),0) FROM agendamento_extra e WHERE e.id_agendamento=a.id_agendamento);
+
+-- A03 — Algum produto ficou com saldo de estoque negativo?
+-- Verifica: RN13
+SELECT 'A03 - estoque negativo' AS auditoria, COUNT(*) AS violacoes
+FROM vw_saldo_estoque WHERE saldo < 0;
+
+-- A04 — Existe mais de um caixa aberto ao mesmo tempo?
+-- Verifica: RN14
+SELECT 'A04 - caixa aberto duplicado' AS auditoria, GREATEST(COUNT(*)-1,0) AS violacoes
+FROM fechamento_caixa WHERE status='Aberto';
+
+-- A05 — Existe agendamento sem nenhum serviço principal registrado?
+-- Verifica: RN05 (preço e duração ficam no item do agendamento) e RN01
+SELECT 'A05 - agendamento sem serviço' AS auditoria, COUNT(*) AS violacoes
+FROM agendamento a
+WHERE NOT EXISTS (SELECT 1 FROM agendamento_servico s WHERE s.id_agendamento=a.id_agendamento);
+
+-- A06 — Existe avaliação de agendamento que não foi concluído?
+-- Verifica: RF07 (avaliação só após atendimento concluído)
+SELECT 'A06 - avaliação sem atendimento concluído' AS auditoria, COUNT(*) AS violacoes
+FROM avaliacao av JOIN agendamento a ON a.id_agendamento=av.id_agendamento
+WHERE a.status <> 'Concluido';
+
+-- A07 — Algum estorno devolveu mais do que o pagamento original?
+-- Verifica: RN12 (estorno referencia o pagamento original, sem apagá-lo)
+SELECT 'A07 - estorno maior que a cobrança' AS auditoria, COUNT(*) AS violacoes
+FROM pagamento o
+JOIN (SELECT id_pagamento_origem, SUM(valor) AS estornado
+        FROM pagamento WHERE tipo_operacao='Estorno' AND status='Pago'
+       GROUP BY id_pagamento_origem) e ON e.id_pagamento_origem=o.id_pagamento
+WHERE e.estornado > o.valor;
+
+-- ============================================================================
+-- PARTE 10 — Testes das regras (T01…T05): cada linha deve mostrar OK
+-- ============================================================================
+-- O procedimento tenta gravar dados inválidos, captura o erro esperado e é
+-- removido no final. Nenhum registro inválido fica no banco.
+
+DROP PROCEDURE IF EXISTS executar_testes_regras;
+DELIMITER $$
+CREATE PROCEDURE executar_testes_regras()
+BEGIN
+  DECLARE bloqueado BOOL;
+  DECLARE ag INT;
+  DECLARE prof INT;
+  DECLARE regra INT;
+  DECLARE dia DATE;
+  DECLARE inicio TIME;
+
+  SELECT id_agendamento,id_profissional,id_regra_calendario,data,hora_inicio
+    INTO ag,prof,regra,dia,inicio FROM agendamento WHERE status='Concluido' LIMIT 1;
+
+  -- T01 — Verifica: RN09 (sem sobreposição de horário do mesmo profissional)
+  SET bloqueado=FALSE;
+  BEGIN
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET bloqueado=TRUE;
+    INSERT INTO agendamento (id_cliente,id_profissional,id_regra_calendario,data,hora_inicio,hora_fim,status,politica_reserva_versao,politica_aceita_em,expira_em)
+    VALUES (1,prof,regra,dia,inicio,ADDTIME(inicio,'00:40:00'),'Aguardando_pagamento','teste',NOW(),DATE_ADD(NOW(),INTERVAL 10 MINUTE));
+  END;
+  SELECT 'T01 - bloqueia sobreposição de agenda (RN09)' AS teste,IF(bloqueado,'OK','FALHOU') AS resultado;
+
+  -- T02 — Verifica: RN03 (formas de pagamento permitidas)
+  SET bloqueado=FALSE;
+  BEGIN
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET bloqueado=TRUE;
+    INSERT INTO pagamento (id_agendamento,tipo_operacao,forma_pagamento,valor,status,criado_em)
+    VALUES (ag,'Cobranca','Fiado',10.00,'Pendente',NOW());
+  END;
+  SELECT 'T02 - bloqueia forma de pagamento inválida (RN03)' AS teste,IF(bloqueado,'OK','FALHOU') AS resultado;
+
+  -- T03 — Verifica: RF07 (nota da avaliação entre 1 e 5)
+  SET bloqueado=FALSE;
+  BEGIN
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET bloqueado=TRUE;
+    INSERT INTO avaliacao (id_agendamento,nota,comentario) VALUES (ag,6,'Nota inválida');
+  END;
+  SELECT 'T03 - bloqueia nota fora de 1 a 5 (RF07)' AS teste,IF(bloqueado,'OK','FALHOU') AS resultado;
+
+  -- T04 — Verifica: RN14 (apenas um caixa aberto)
+  SET bloqueado=FALSE;
+  BEGIN
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET bloqueado=TRUE;
+    INSERT INTO fechamento_caixa (id_usuario,aberto_em,saldo_abertura,status) VALUES (1,NOW(),0,'Aberto');
+  END;
+  SELECT 'T04 - bloqueia segundo caixa aberto (RN14)' AS teste,IF(bloqueado,'OK','FALHOU') AS resultado;
+
+  -- T05 — Verifica: RN17 (marketing exige consentimento registrado)
+  SET bloqueado=FALSE;
+  BEGIN
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET bloqueado=TRUE;
+    INSERT INTO cliente (nome,telefone,ativo,aceita_marketing) VALUES ('Teste marketing','(11) 95550-9999',TRUE,TRUE);
+  END;
+  SELECT 'T05 - bloqueia marketing sem consentimento (RN17)' AS teste,IF(bloqueado,'OK','FALHOU') AS resultado;
+END$$
+DELIMITER ;
+
+CALL executar_testes_regras();
+DROP PROCEDURE executar_testes_regras;
+
+-- Fim do script.

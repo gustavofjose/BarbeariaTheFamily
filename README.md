@@ -30,7 +30,7 @@ Este projeto especifica a base de dados de gestão da Barbearia The Family Hair.
 
 A The Family Hair é uma barbearia de pequeno porte situada na Rua Sonho Gaúcho, 352, Jardim São Nicolau, São Paulo, SP. O repositório guarda a foto feita no local, o endereço, o telefone, a razão social e o CNPJ. O levantamento inicial registra duas cadeiras e cita o barbeiro Victor. O sistema foi preparado para mais de um profissional, pois a agenda precisa identificar quem realizará cada atendimento.
 
-O problema central é P1, a organização dos horários quando há cancelamento, atraso ou falta. O modelo também trata P2, a falta de um histórico único para pagamentos e atendimentos, e P3, o acompanhamento de produtos, compras, estoque, contas a pagar e caixa. As consultas G01, G02 e G03 apoiam P1 e P2; G04 e G05 apoiam P3.
+O problema central é P1, a organização dos horários quando há cancelamento, atraso ou falta. O modelo também trata P2, a falta de um histórico único para pagamentos e atendimentos, e P3, o acompanhamento de produtos, compras, estoque, contas a pagar e caixa. No [`script.sql`](docs/script.sql), P1 é respondido por G01, G02, G08 e G10; P2 por S01, G03, G06 e G11; P3 por S02, G04, G05, G07 e G09 (ver a tabela de rastreabilidade da seção 1.6).
 
 O escopo reúne os dados de agenda, atendimento, pagamentos, produtos, compras, estoque e financeiro. Assim, o projeto não fica restrito ao agendamento. Detalhes que ainda dependem da confirmação do responsável, como pagamento antecipado, tolerância de atraso e a rotina atual de estoque, estão identificados no levantamento e não são apresentados como fatos da operação.
 
@@ -42,35 +42,35 @@ Na visita foi observado o atendimento em uma estrutura de duas cadeiras. O grupo
 
 #### Processos de negócio
 
-Os processos abaixo descrevem o fluxo que o banco deve registrar. Onde a prática da barbearia ainda não foi confirmada, a regra está marcada como proposta de sistema e precisa da validação indicada no levantamento.
+Os processos abaixo descrevem o fluxo que o banco deve registrar. Cada um tem um código (PN01 a PN14), citado no cabeçalho das consultas do script SQL. Onde a prática da barbearia ainda não foi confirmada, a regra está marcada como proposta de sistema e precisa da validação indicada no levantamento.
 
-**1. Cadastro e identificação do cliente.** No primeiro atendimento, registrar somente nome, telefone necessário para contato e, se desejado, e-mail; conferir os dados com o titular, explicar o uso operacional e não condicionar o serviço à aceitação de propaganda. Buscar duplicidade pelo telefone, permitir correção e registrar data de criação/atualização. Marketing requer opção separada, revogável e registrada.
+**PN01 — Cadastro e identificação do cliente.** No primeiro atendimento, registrar somente nome, telefone necessário para contato e, se desejado, e-mail; conferir os dados com o titular, explicar o uso operacional e não condicionar o serviço à aceitação de propaganda. Buscar duplicidade pelo telefone, permitir correção e registrar data de criação/atualização. Marketing requer opção separada, revogável e registrada.
 
-**2. Escolha de serviço e extras.** O cliente escolhe um ou mais serviços ativos de `SERVICO` e adicionais opcionais de `SERVICO_EXTRA`. Gravar as escolhas em `AGENDAMENTO_SERVICO` e `AGENDAMENTO_EXTRA`, mostrar descrição, duração, preço unitário e total antes da confirmação. Um agendamento confirmado precisa de ao menos um serviço principal; FK sozinha não garante isso.
+**PN02 — Escolha de serviço e extras.** O cliente escolhe um ou mais serviços ativos de `SERVICO` e adicionais opcionais de `SERVICO_EXTRA`. Gravar as escolhas em `AGENDAMENTO_SERVICO` e `AGENDAMENTO_EXTRA`, mostrar descrição, duração, preço unitário e total antes da confirmação. Um agendamento confirmado precisa de ao menos um serviço principal; FK sozinha não garante isso.
 
-**3. Profissional, data e horário.** Oferecer profissionais ativos e consultar `REGRA_CALENDARIO` para os dias e horários semanais, além das exceções publicadas pela barbearia, incluindo feriados abertos ou fechados. Validar que início e término caibam no expediente e verificar conflito por profissional com intervalos sobrepostos, inclusive em operações simultâneas. A premissa inicial é terça a sábado, das 08:00 às 19:00, com domingo e segunda fechados.
+**PN03 — Profissional, data e horário.** Oferecer profissionais ativos e consultar `REGRA_CALENDARIO` para os dias e horários semanais, além das exceções publicadas pela barbearia, incluindo feriados abertos ou fechados. Validar que início e término caibam no expediente e verificar conflito por profissional com intervalos sobrepostos, inclusive em operações simultâneas. A premissa inicial é terça a sábado, das 08:00 às 19:00, com domingo e segunda fechados.
 
-**4. Pagamento durante o agendamento.** O banco registra forma, valor, status e data/hora da tentativa de pagamento. Pix, cartão e dinheiro são formas previstas no modelo. A exigência de pagamento integral para confirmar a reserva e o prazo de dez minutos para uma reserva pendente são propostas do sistema; o responsável deve confirmar se há sinal ou pagamento antecipado na prática.
+**PN04 — Pagamento durante o agendamento.** O banco registra forma, valor, status e data/hora da tentativa de pagamento. Pix, cartão e dinheiro são formas previstas no modelo. A exigência de pagamento integral para confirmar a reserva e o prazo de dez minutos para uma reserva pendente são propostas do sistema; o responsável deve confirmar se há sinal ou pagamento antecipado na prática.
 
-**5. Confirmação e lembretes.** Em uma transação, persistir agendamento, serviços/extras, preço contratado, pagamento confirmado e movimento financeiro. Só então mudar para Confirmado e emitir recibo/comprovante; o documento fiscal aplicável segue a rotina definida com a contabilidade. Enviar confirmação e lembretes de 24 h e 1 h pelos canais escolhidos, sem usar esses avisos para marketing.
+**PN05 — Confirmação e lembretes.** Em uma transação, persistir agendamento, serviços/extras, preço contratado, pagamento confirmado e movimento financeiro. Só então mudar para Confirmado e emitir recibo/comprovante; o documento fiscal aplicável segue a rotina definida com a contabilidade. Enviar confirmação e lembretes de 24 h e 1 h pelos canais escolhidos, sem usar esses avisos para marketing.
 
-**6. Chegada, tolerância e atendimento.** Registrar chegada, início e conclusão do atendimento. A proposta é registrar atraso, falta e remarcação, sem apagar o agendamento. A tolerância de dez minutos e a marcação de falta após quinze minutos sem contato ainda precisam ser confirmadas com o responsável.
+**PN06 — Chegada, tolerância e atendimento.** Registrar chegada, início e conclusão do atendimento. A proposta é registrar atraso, falta e remarcação, sem apagar o agendamento. A tolerância de dez minutos e a marcação de falta após quinze minutos sem contato ainda precisam ser confirmadas com o responsável.
 
-**7. Execução e higiene entre clientes.** Conferir serviço contratado, realizar atendimento e registrar conclusão. Entre clientes, remover resíduos e fazer limpeza/desinfecção adequada; instrumentos reutilizáveis que exijam esterilização devem seguir instruções do fabricante e normas sanitárias locais, com registro de etapa, responsável, horário e resultado. Materiais de uso único não são reprocessados.
+**PN07 — Execução e higiene entre clientes.** Conferir serviço contratado, realizar atendimento e registrar conclusão. Entre clientes, remover resíduos e fazer limpeza/desinfecção adequada; instrumentos reutilizáveis que exijam esterilização devem seguir instruções do fabricante e normas sanitárias locais, com registro de etapa, responsável, horário e resultado. Materiais de uso único não são reprocessados.
 
-**8. Cancelamento, remarcação e falta.** Registrar solicitante, data/hora, motivo, antecedência e resultado da solicitação. A proposta de permitir remarcação ou reembolso com duas horas de antecedência não é uma regra confirmada da barbearia. O responsável deve definir a prática para cancelamento próximo do horário, falta, crédito e estorno.
+**PN08 — Cancelamento, remarcação e falta.** Registrar solicitante, data/hora, motivo, antecedência e resultado da solicitação. A proposta de permitir remarcação ou reembolso com duas horas de antecedência não é uma regra confirmada da barbearia. O responsável deve definir a prática para cancelamento próximo do horário, falta, crédito e estorno.
 
-**9. Venda de produtos no balcão.** Identificar produto, quantidade, preço, desconto autorizado e total; concluir venda em `VENDA`/`ITEM_VENDA`, receber por Pix, crédito, débito ou dinheiro e gerar saída de estoque na mesma transação. Cliente é opcional para venda de balcão. Nunca permitir saldo negativo sem ajuste autorizado e auditado.
+**PN09 — Venda de produtos no balcão.** Identificar produto, quantidade, preço, desconto autorizado e total; concluir venda em `VENDA`/`ITEM_VENDA`, receber por Pix, crédito, débito ou dinheiro e gerar saída de estoque na mesma transação. Cliente é opcional para venda de balcão. Nunca permitir saldo negativo sem ajuste autorizado e auditado.
 
-**10. Compras e reposição de estoque.** Responsável cadastra fornecedor, registra pedido/compra, itens, quantidades e custos em `COMPRA`/`ITEM_COMPRA`, confere mercadoria e documento do fornecedor no recebimento e só então atualiza o estoque. Divergências, perdas, validade/lote quando pertinente e devoluções são registradas; não editar saldo sem trilha.
+**PN10 — Compras e reposição de estoque.** Responsável cadastra fornecedor, registra pedido/compra, itens, quantidades e custos em `COMPRA`/`ITEM_COMPRA`, confere mercadoria e documento do fornecedor no recebimento e só então atualiza o estoque. Divergências, perdas, validade/lote quando pertinente e devoluções são registradas; não editar saldo sem trilha.
 
-**11. Contas a pagar e caixa.** Lançar obrigações com fornecedor, origem, vencimento, valor e status; alertar vencimentos e registrar cada baixa. `MOVIMENTO_CAIXA` mantém entradas/saídas por origem e forma; abertura/fechamento registra saldo inicial, esperado, contado e diferença por dinheiro, Pix e cartões. Conferir relatórios do adquirente/banco, justificar divergências e impedir alteração de caixa já fechado sem estorno/auditoria.
+**PN11 — Contas a pagar e caixa.** Lançar obrigações com fornecedor, origem, vencimento, valor e status; alertar vencimentos e registrar cada baixa. `MOVIMENTO_CAIXA` mantém entradas/saídas por origem e forma; abertura/fechamento registra saldo inicial, esperado, contado e diferença por dinheiro, Pix e cartões. Conferir relatórios do adquirente/banco, justificar divergências e impedir alteração de caixa já fechado sem estorno/auditoria.
 
-**12. Documento fiscal.** Associar documentos emitidos às vendas e aos atendimentos, além dos documentos recebidos nas compras. A necessidade de emissão, o tipo de documento e a guarda devem ser confirmados com a contabilidade da organização.
+**PN12 — Documento fiscal.** Associar documentos emitidos às vendas e aos atendimentos, além dos documentos recebidos nas compras. A necessidade de emissão, o tipo de documento e a guarda devem ser confirmados com a contabilidade da organização.
 
-**13. Relatórios e avaliação.** Fechar agenda e caixa por período, profissional e forma de pagamento; acompanhar ocupação, cancelamentos/faltas, vendas, margem, giro e estoque mínimo. Após atendimento concluído, permitir uma avaliação por agendamento, sem publicar comentário pessoal sem revisão e finalidade adequada.
+**PN13 — Relatórios e avaliação.** Fechar agenda e caixa por período, profissional e forma de pagamento; acompanhar ocupação, cancelamentos/faltas, vendas, margem, giro e estoque mínimo. Após atendimento concluído, permitir uma avaliação por agendamento, sem publicar comentário pessoal sem revisão e finalidade adequada.
 
-**14. Gestão de acessos, auditoria e direitos.** Conceder acesso individual por função, desativar contas no desligamento e registrar alterações relevantes. O banco limita os dados de clientes ao necessário para contato e atendimento; a política de retenção precisa ser definida pela organização.
+**PN14 — Gestão de acessos, auditoria e direitos.** Conceder acesso individual por função, desativar contas no desligamento e registrar alterações relevantes. O banco limita os dados de clientes ao necessário para contato e atendimento; a política de retenção precisa ser definida pela organização.
 
 #### Requisitos funcionais
 
@@ -229,15 +229,47 @@ O modelo conceitual possui 25 entidades/tabelas. Cliente e profissional se relac
 
 ### 1.6 Proposta analítica para BI e IA
 
-| Indicador | Cálculo e período | Tabelas | Consulta gerencial |
-|---|---|---|---|
-| P1, situação da agenda | Quantidade e percentual de agendamentos por status. | `AGENDAMENTO`. | G01 |
-| P1, agenda detalhada | Agendamentos por data, profissional, cliente, serviços e valor contratado. | `AGENDAMENTO`, `CLIENTE`, `PROFISSIONAL`, `AGENDAMENTO_SERVICO`, `AGENDAMENTO_EXTRA`. | G02 |
-| P2, receita por profissional e serviço | Quantidade de atendimentos e receita de serviços concluídos. | `AGENDAMENTO`, `PROFISSIONAL`, `AGENDAMENTO_SERVICO`, `SERVICO`. | G03 |
-| P3, estoque abaixo do mínimo | Produtos com saldo inferior ao mínimo na data da consulta. | `PRODUTO`, `MOVIMENTO_ESTOQUE`. | G04 |
-| P3, conciliação do caixa | Valor esperado, conferido e diferença por forma de pagamento. | `FECHAMENTO_CAIXA`, `FECHAMENTO_FORMA`. | G05 |
+**KPIs propostos** (cada um calculado por uma consulta do script):
 
-As auditorias A01 a A04 verificam horários sobrepostos, confirmação sem pagamento integral, estoque negativo e caixa aberto duplicado. Um painel pode apresentar agenda, cancelamentos, atendimentos, estoque e caixa. Previsão de faltas ou recomendação de horários só deve ser considerada quando houver histórico suficiente e uma política de privacidade definida.
+| KPI | Fórmula | Período | Meta | Consulta |
+|---|---|---|---|---|
+| Taxa de perda da agenda | (faltas + cancelamentos) / agendamentos | mês | até 10% | G08 |
+| Atendimentos por profissional por dia | atendimentos concluídos / dias com atendimento | mês | 8 por dia (RN06) | G10 |
+| Ticket médio dos atendimentos | receita de serviços e adicionais / atendimentos concluídos | mês | acompanhar a evolução mensal | G11 |
+| Produtos abaixo do estoque mínimo | quantidade de produtos com saldo < estoque mínimo | dia | zero produtos | G04 |
+| Diferença de caixa | valor conferido − valor esperado, por forma de pagamento | fechamento | R$ 0,00 | G05 |
+
+**Rastreabilidade** (problema ou KPI → tabelas → consulta no [`script.sql`](docs/script.sql)):
+
+| Problema ou KPI | Tabelas envolvidas | Consulta no script |
+|---|---|---|
+| P1 — situação da agenda (concluídos, cancelados, faltas) | `AGENDAMENTO` | G01 |
+| P1 — agenda por data, profissional, serviços e valor contratado | `AGENDAMENTO`, `CLIENTE`, `PROFISSIONAL`, `AGENDAMENTO_SERVICO`, `SERVICO`, `AGENDAMENTO_EXTRA`, `SERVICO_EXTRA` | G02 |
+| P1 / KPI — taxa mensal de faltas e cancelamentos | `AGENDAMENTO` | G08 |
+| P1 / KPI — atendimentos por profissional por dia | `AGENDAMENTO`, `PROFISSIONAL` | G10 |
+| P2 — histórico de atendimentos e pagamentos do cliente | `CLIENTE`, `AGENDAMENTO`, `PROFISSIONAL`, `AGENDAMENTO_SERVICO`, `SERVICO`, `PAGAMENTO` | S01 |
+| P2 — receita e nota média por profissional e serviço | `AGENDAMENTO`, `PROFISSIONAL`, `AGENDAMENTO_SERVICO`, `SERVICO`, `AVALIACAO` | G03 |
+| P2 — valor líquido e estornos por forma de pagamento | `PAGAMENTO` | G06 |
+| P2 / KPI — ticket médio e receita mensal | `AGENDAMENTO`, `AGENDAMENTO_SERVICO`, `AGENDAMENTO_EXTRA` | G11 |
+| P3 — compras por fornecedor e produto | `COMPRA`, `FORNECEDOR`, `ITEM_COMPRA`, `PRODUTO` | S02 |
+| P3 / KPI — produtos abaixo do estoque mínimo | `PRODUTO`, `MOVIMENTO_ESTOQUE` (visão `vw_saldo_estoque`) | G04 |
+| P3 / KPI — diferença no fechamento de caixa | `FECHAMENTO_CAIXA`, `FECHAMENTO_FORMA` | G05 |
+| P3 — produtos mais vendidos no balcão | `VENDA`, `ITEM_VENDA`, `PRODUTO` | G07 |
+| P3 — contas a pagar atrasadas e a vencer | `CONTA_PAGAR`, `FORNECEDOR` | G09 |
+
+**Auditorias** (resultado esperado: 0 violações):
+
+| Código | Verifica | Regra |
+|---|---|---|
+| A01 | Horários sobrepostos do mesmo profissional | RN09 |
+| A02 | Agendamento confirmado/concluído sem pagamento integral | RN02, RN11 |
+| A03 | Produto com saldo de estoque negativo | RN13 |
+| A04 | Mais de um caixa aberto | RN14 |
+| A05 | Agendamento sem serviço principal | RN01, RN05 |
+| A06 | Avaliação de atendimento não concluído | RF07 |
+| A07 | Estorno maior que o pagamento original | RN12 |
+
+Os testes T01 a T05 tentam gravar dados inválidos e confirmam que o banco bloqueia (RN09, RN03, RF07, RN14 e RN17). Um painel pode apresentar agenda, cancelamentos, atendimentos, estoque e caixa. Previsão de faltas ou recomendação de horários só deve ser considerada quando houver histórico suficiente e uma política de privacidade definida.
 
 ## 2. Modelo Lógico Relacional
 
@@ -245,13 +277,35 @@ O modelo lógico é apresentado em [diagrama do modelo lógico](diagramas/modelo
 
 ## 3. Script SQL Completo
 
-Os scripts MySQL 8.0.16 ou superior ficam em [`docs/`](docs/): [`script.sql`](docs/script.sql) cria o banco e as tabelas; [`massa-de-dados.sql`](docs/massa-de-dados.sql) carrega dados fictícios; e [`testes-e-consultas.sql`](docs/testes-e-consultas.sql) reúne demonstrações, as consultas gerenciais G01 a G05 e auditorias.
+São dois arquivos para MySQL 8.0.16 ou superior, na pasta [`docs/`](docs/):
+
+- [`script.sql`](docs/script.sql): script completo, executado do zero em um banco vazio. Segue esta ordem: CREATE DATABASE e CREATE TABLE (parte 1); constraints UNIQUE e FK (parte 2); gatilhos, eventos e visão (parte 3); carga da massa com INSERT INTO (parte 4); SELECT com JOIN V01, S01 e S02 (parte 5); UPDATE U01 a U03 (parte 6); DELETE D01 e D02 (parte 7); consultas gerenciais G01 a G11 (parte 8); auditorias A01 a A07 (parte 9); e testes de regras T01 a T05 (parte 10). Cada consulta tem um cabeçalho com o código, a pergunta que responde e o que atende (problema P1 a P3 e processo PN, ou regra RN).
+- [`massa-de-dados.sql`](docs/massa-de-dados.sql): a mesma carga da parte 4, em arquivo separado. Ela limpa as tabelas antes de inserir e serve para recarregar os dados sem recriar o banco.
+
+O passo a passo de execução está em [COMO_EXECUTAR.md](COMO_EXECUTAR.md).
 
 ## 4. Massa de Dados
 
-A massa é fictícia e reproduz os processos modelados sem utilizar dados reais de clientes. A quantidade de registros representa o porte da operação: duas cadeiras, profissionais cadastrados, atendimentos, serviços, produtos e movimentações em períodos distintos.
+A massa é fictícia e reproduz os processos modelados sem utilizar dados reais de clientes. Ela cobre dez semanas de operação, de 01/09/2026 a 07/11/2026, com datas fixas para que qualquer pessoa obtenha os mesmos resultados.
 
-Os cenários incluem reservas concluídas, canceladas e faltas; clientes sem agendamento recente; diferentes serviços e adicionais; formas de pagamento distintas; produtos abaixo do mínimo; compras recebidas; vendas concluídas; e fechamentos com diferença para demonstrar consultas de gestão e auditoria. O script inclui a carga da massa e a explicação do volume por tabela.
+**Como o porte justifica o volume.** A barbearia tem duas cadeiras e funciona de terça a sábado. A massa considera dois profissionais ativos com cinco atendimentos agendados por dia cada um, cerca de metade da capacidade de oito a nove cortes por dia (RN06). O volume semanal de atendimentos não foi informado pelo responsável, por isso esse é um parâmetro do grupo, e o KPI G10 mostra essa ocupação. Assim:
+
+| Tabela | Registros | Justificativa |
+|---|---:|---|
+| `AGENDAMENTO`, `AGENDAMENTO_SERVICO` | 500 | 2 profissionais × 5 atendimentos/dia × 50 dias de funcionamento (cerca de 50 por semana). |
+| `AGENDAMENTO_EXTRA` | 83 | Cerca de um em cada seis atendimentos inclui sobrancelha, hidratação ou pigmentação. |
+| `PAGAMENTO` | 519 | Uma cobrança por agendamento e 19 estornos de cancelamentos feitos com antecedência. |
+| `AVALIACAO` | 140 | Cerca de um terço dos atendimentos concluídos recebe avaliação, com notas de 3 a 5. |
+| `CLIENTE` | 45 | 32 clientes recorrentes atendidos no período e 13 cadastrados sem agendamento. |
+| `PROFISSIONAL` | 3 | Dois ativos (duas cadeiras) e um inativo, mantido no histórico (RN08). |
+| `SERVICO`, `SERVICO_EXTRA` | 7 e 3 | Catálogo de cortes, barba e combos, com um serviço promocional inativo. |
+| `PRODUTO`, `FORNECEDOR`, `COMPRA`, `ITEM_COMPRA` | 12, 3, 3, 12 | Estoque inicial de revenda e insumos, comprado de três fornecedores. |
+| `VENDA`, `ITEM_VENDA` | 31 | Cerca de três vendas de balcão por semana, mais uma venda ainda aberta. |
+| `MOVIMENTO_CAIXA`, `MOVIMENTO_ESTOQUE` | 534 e 44 | Gerados pelas operações acima (entradas, estornos, baixas de contas, vendas e compras). |
+| `CONTA_PAGAR` | 6 | Aluguel de três meses, compra de estoque, limpeza e energia. |
+| Tabelas de apoio | poucas linhas | Calendário (9 regras), usuários (6), fechamentos (2), documentos fiscais (49) e log (3). |
+
+**Cenários cobertos.** Atendimentos concluídos, cancelados com estorno, reservas expiradas sem pagamento e faltas; seis serviços diferentes, com e sem adicionais; pagamentos em Pix, crédito, débito e dinheiro; um produto abaixo do estoque mínimo; venda com desconto e venda sem cliente identificado; clientes sem agendamento; uma conta atrasada e outra a vencer; e um fechamento de caixa com diferença de R$ 12,50 no dinheiro. A consulta V01 do script mostra o volume carregado em cada tabela.
 
 ## 5. Repositório GitHub
 
@@ -264,8 +318,9 @@ O relatório técnico é este `README.md`, na raiz da branch `main`. Os demais a
 | Modelo lógico | [diagramas/modelo-logico.png](diagramas/modelo-logico.png) |
 | Levantamento da organização | [levantamento/levantamento.md](levantamento/levantamento.md) |
 | Evidências do local e da entrevista | [levantamento/evidencias/](levantamento/evidencias/) (JPG ou PNG) |
-| Script SQL, massa e testes | [docs/](docs/) |
-| Apresentação | slides do pitch final (pendente de inclusão) |
+| Script SQL completo (com consultas, auditorias e testes) | [docs/script.sql](docs/script.sql) |
+| Massa de dados | [docs/massa-de-dados.sql](docs/massa-de-dados.sql) |
+| Apresentação | [docs/slides.pptx](docs/slides.pptx) |
 
 O histórico de commits registra o desenvolvimento ao longo do tempo e a contribuição dos integrantes com suas próprias contas do GitHub.
 
@@ -279,8 +334,9 @@ O grupo declarou uso de Gemini e DeepSeek na organização do README, nos requis
 | Gemini, revisão da documentação | Verificar pendências e coerência entre a documentação e o banco de dados. Prompt usado: "Analisa o README do projeto e me explica o que ainda falta fazer no trabalho da Barbearia The Family e se a documentação está coerente com o banco de dados." | A resposta serviu para revisar as pendências e a consistência da documentação. O grupo conferiu manualmente os arquivos antes de manter as alterações. |
 | Claude, script MySQL e DER conceitual | Apoiar a leitura do modelo lógico, do repositório e a conversão para DER no brModelo, notação Peter Chen. Prompts usados: "Como está esse arquivo do modelo lógico do meu projeto?" e "Esse é o arquivo SQL https://github.com/gustavofjose/BarbeariaTheFamily do projeto. Leia o README, preciso fazer o MODELO DER no brModelo Peter Chen, por onde eu começo?" | A resposta foi usada como apoio para revisar o modelo e orientar a montagem do DER. O grupo executou e validou os arquivos no MySQL. A revisão manual conferiu a compatibilidade entre o script, os diagramas e o dicionário. |
 | ChatGPT, consolidação do relatório | Integrar as informações já existentes no projeto, o dicionário e os artefatos finais em um README consistente. | O texto foi reestruturado. Regras sem confirmação foram marcadas como proposta ou pendência. |
+| Claude (Claude Code), organização do script, consultas e massa de dados | O professor pediu que as consultas ficassem no mesmo arquivo do script e que cada uma indicasse o problema que resolve; a massa tinha um único serviço e nenhum adicional. Prompts usados: "Veja se está tudo OK com o projeto; a prioridade seria deixar 2 arquivos SQL juntando testes-e-consultas ao final do script" e "corrigir a massa". | O arquivo de testes foi incorporado ao `script.sql`, com cabeçalhos P/PN/RN em cada consulta. Foram criadas as consultas S01, S02, U01–U03, D01, D02, G06–G11 e A05–A07, e a massa passou a variar serviços, adicionais, formas de pagamento, notas e estornos. O script foi executado do zero no MySQL 8.0.46 sem erros, com auditorias em zero e testes T01–T05 em OK. O grupo conferiu os resultados antes de manter as alterações. |
 
-As fontes utilizadas foram o levantamento do grupo, a foto feita no local e os dados de identificação da organização. O grupo deve registrar as respostas do responsável e conferir informações fiscais e sanitárias com profissionais competentes. Um risco do uso de IA é transformar uma prática comum em fato da barbearia; por isso, parâmetros como sinal, prazo de cancelamento e tolerância estão sinalizados como pendentes de confirmação.
+As fontes utilizadas foram o levantamento do grupo, a foto feita no local e os dados de identificação da organização. O grupo deve registrar as respostas do responsável e conferir informações fiscais e sanitárias com profissionais competentes. Um risco do uso de IA é transformar uma prática comum em fato da barbearia; por isso, parâmetros como sinal, prazo de cancelamento e tolerância estão sinalizados como pendentes de confirmação. Na massa de dados, a IA gerou volumes coerentes com as regras do banco, mas os números (por exemplo, cinco atendimentos por profissional por dia) são parâmetros do grupo e não dados informados pela barbearia. Uma primeira versão da massa distribuía os serviços só pelo horário, de modo que um profissional nunca fazia barba; isso foi corrigido para variar também pelo dia.
 
 ## 7. Apresentação Corporativa Final
 

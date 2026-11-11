@@ -149,48 +149,103 @@ CREATE PROCEDURE popular_agendamentos()
 BEGIN
   DECLARE d DATE DEFAULT '2026-09-01';
   DECLARE slot INT;
+  DECLARE seq INT DEFAULT 0;
   DECLARE prof INT;
   DECLARE cliente_id INT;
   DECLARE agenda_id INT;
   DECLARE pagamento_id INT;
   DECLARE hora_i TIME;
   DECLARE estado VARCHAR(30);
+  DECLARE v_serv INT;
+  DECLARE v_preco DECIMAL(10,2);
+  DECLARE v_dur INT;
+  DECLARE v_extra INT;
+  DECLARE v_preco_extra DECIMAL(10,2);
+  DECLARE v_dur_extra INT;
+  DECLARE v_total DECIMAL(10,2);
+  DECLARE v_forma VARCHAR(20);
   WHILE d <= '2026-11-07' DO
     IF DAYOFWEEK(d) BETWEEN 3 AND 7 THEN
       SET slot = 0;
-      -- Cinco horários para cada um dos dois profissionais ativos: cerca de
-      -- 490 reservas no período, próximo ao volume da massa original.
+      -- Cinco horários para cada um dos dois profissionais ativos: 500 reservas
+      -- em 50 dias de funcionamento (cerca de 50 por semana).
       WHILE slot < 10 DO
+        SET seq = seq + 1;
         SET prof = IF(slot < 5,1,3);
         SET cliente_id = 1 + MOD(DATEDIFF(d,'2026-09-01')*10+slot,32);
         SET hora_i = MAKETIME(8 + MOD(slot,5)*2,0,0);
+
+        -- Serviço principal: corte social é o mais comum, seguido de degradê e combo.
+        SET v_serv = CASE WHEN MOD(seq,23)=0 THEN 6
+                          ELSE CASE MOD(seq + DAYOFYEAR(d),10)
+                                 WHEN 4 THEN 2 WHEN 5 THEN 2
+                                 WHEN 6 THEN 3
+                                 WHEN 7 THEN 4 WHEN 8 THEN 4
+                                 WHEN 9 THEN 5
+                                 ELSE 1 END END;
+        SELECT preco, duracao INTO v_preco, v_dur FROM servico WHERE id_servico = v_serv;
+
+        -- Cerca de um em cada seis agendamentos inclui um adicional.
+        SET v_extra = IF(MOD(seq,6)=0, 1 + MOD(seq DIV 6,3), NULL);
+        SET v_preco_extra = 0;
+        SET v_dur_extra = 0;
+        IF v_extra IS NOT NULL THEN
+          SELECT preco, duracao INTO v_preco_extra, v_dur_extra FROM servico_extra WHERE id_extra = v_extra;
+        END IF;
+        SET v_total = v_preco + v_preco_extra;
+        SET v_forma = CASE MOD(seq,10) WHEN 0 THEN 'Credito' WHEN 1 THEN 'Credito'
+                                       WHEN 2 THEN 'Debito' WHEN 3 THEN 'Dinheiro'
+                                       ELSE 'Pix' END;
+
         INSERT INTO agendamento
           (id_cliente,id_profissional,id_regra_calendario,data,hora_inicio,hora_fim,status,politica_reserva_versao,politica_aceita_em,criado_em,expira_em)
-        VALUES (cliente_id,prof,DAYOFWEEK(d)-1,d,hora_i,ADDTIME(hora_i,'00:40:00'),'Aguardando_pagamento','v1.0',
+        VALUES (cliente_id,prof,DAYOFWEEK(d)-1,d,hora_i,ADDTIME(hora_i,SEC_TO_TIME((v_dur+v_dur_extra)*60)),'Aguardando_pagamento','v1.0',
                 TIMESTAMP(d,'08:00:00'),TIMESTAMP(d,'08:00:00'),TIMESTAMP(d,'08:10:00'));
         SET agenda_id = LAST_INSERT_ID();
         INSERT INTO agendamento_servico (id_agendamento,id_servico,preco_contratado,duracao_contratada)
-        VALUES (agenda_id,1,50.00,40);
-        SET estado = CASE WHEN MOD(agenda_id,13)=0 THEN 'Cancelado'
-                           WHEN MOD(agenda_id,11)=0 THEN 'Faltou'
-                           ELSE 'Concluido' END;
-        IF estado = 'Cancelado' THEN
+        VALUES (agenda_id,v_serv,v_preco,v_dur);
+        IF v_extra IS NOT NULL THEN
+          INSERT INTO agendamento_extra (id_agendamento,id_extra,preco_contratado,duracao_contratada)
+          VALUES (agenda_id,v_extra,v_preco_extra,v_dur_extra);
+        END IF;
+
+        SET estado = CASE WHEN MOD(seq,13)=0 AND MOD(seq,2)=1 THEN 'Expirado'
+                          WHEN MOD(seq,13)=0 THEN 'Cancelado'
+                          WHEN MOD(seq,11)=0 THEN 'Faltou'
+                          ELSE 'Concluido' END;
+        IF estado = 'Expirado' THEN
+          -- Pagamento recusado: a reserva expira e o horário é liberado (RN18).
           INSERT INTO pagamento (id_agendamento,tipo_operacao,forma_pagamento,valor,status,criado_em)
-          VALUES (agenda_id,'Cobranca','Pix',50.00,'Falhou',TIMESTAMP(d,'08:02:00'));
-          UPDATE agendamento SET status='Cancelado',cancelado_em=TIMESTAMP(d,'08:10:00'),motivo_cancelamento='Cancelamento fictício' WHERE id_agendamento=agenda_id;
+          VALUES (agenda_id,'Cobranca','Pix',v_total,'Falhou',TIMESTAMP(d,'08:02:00'));
+          UPDATE agendamento SET status='Cancelado',cancelado_em=TIMESTAMP(d,'08:10:00'),
+                 motivo_cancelamento='Reserva expirada sem pagamento' WHERE id_agendamento=agenda_id;
         ELSE
           INSERT INTO pagamento (id_agendamento,tipo_operacao,forma_pagamento,valor,status,criado_em,confirmado_em,referencia_provedor,chave_idempotencia)
-          VALUES (agenda_id,'Cobranca',IF(MOD(agenda_id,4)=0,'Credito','Pix'),50.00,'Pago',TIMESTAMP(d,'08:02:00'),TIMESTAMP(d,'08:03:00'),
+          VALUES (agenda_id,'Cobranca',v_forma,v_total,'Pago',TIMESTAMP(d,'08:02:00'),TIMESTAMP(d,'08:03:00'),
                   CONCAT('PAG-',agenda_id),CONCAT('idem-',agenda_id));
           SET pagamento_id=LAST_INSERT_ID();
           INSERT INTO movimento_caixa (id_usuario,id_pagamento,tipo,forma_pagamento,valor,data_hora)
-          VALUES (2,pagamento_id,'Entrada',IF(MOD(agenda_id,4)=0,'Credito','Pix'),50.00,TIMESTAMP(d,'08:03:00'));
+          VALUES (2,pagamento_id,'Entrada',v_forma,v_total,TIMESTAMP(d,'08:03:00'));
           UPDATE agendamento SET status='Confirmado',confirmado_em=TIMESTAMP(d,'08:03:00') WHERE id_agendamento=agenda_id;
-          IF estado='Concluido' THEN
+          IF estado = 'Cancelado' THEN
+            -- Cliente cancelou com antecedência: o pagamento original fica e o estorno é um novo lançamento (RN12).
+            UPDATE agendamento SET status='Cancelado',cancelado_em=TIMESTAMP(d,'08:30:00'),
+                   motivo_cancelamento='Cancelado pelo cliente com antecedência' WHERE id_agendamento=agenda_id;
+            INSERT INTO pagamento (id_agendamento,id_pagamento_origem,tipo_operacao,forma_pagamento,valor,status,criado_em,confirmado_em,referencia_provedor,chave_idempotencia)
+            VALUES (agenda_id,pagamento_id,'Estorno',v_forma,v_total,'Pago',TIMESTAMP(d,'08:31:00'),TIMESTAMP(d,'08:32:00'),
+                    CONCAT('EST-',agenda_id),CONCAT('idem-est-',agenda_id));
+            INSERT INTO movimento_caixa (id_usuario,id_pagamento,tipo,forma_pagamento,valor,data_hora,motivo)
+            VALUES (2,LAST_INSERT_ID(),'Estorno',v_forma,v_total,TIMESTAMP(d,'08:32:00'),'Estorno de agendamento cancelado');
+          ELSEIF estado = 'Concluido' THEN
             UPDATE agendamento SET status='Concluido',checkin_em=TIMESTAMP(d,hora_i) WHERE id_agendamento=agenda_id;
-            IF MOD(agenda_id,3)=0 THEN
+            IF MOD(seq,3)=0 THEN
               INSERT INTO avaliacao (id_agendamento,nota,comentario,data_avaliacao)
-              VALUES (agenda_id,5,'Ótimo atendimento, recomendo!',TIMESTAMP(d,ADDTIME(hora_i,'01:00:00')));
+              VALUES (agenda_id,
+                      CASE MOD(seq,7) WHEN 0 THEN 3 WHEN 1 THEN 4 WHEN 2 THEN 4 ELSE 5 END,
+                      CASE MOD(seq,7) WHEN 0 THEN 'Atendimento atrasou um pouco.'
+                                      WHEN 1 THEN 'Bom corte.' WHEN 2 THEN 'Gostei, volto sim.'
+                                      ELSE 'Ótimo atendimento, recomendo!' END,
+                      TIMESTAMP(d,ADDTIME(hora_i,'01:30:00')));
             END IF;
           ELSE
             UPDATE agendamento SET status='Faltou' WHERE id_agendamento=agenda_id;
@@ -212,16 +267,28 @@ BEGIN
   DECLARE i INT DEFAULT 1;
   DECLARE venda_id INT;
   DECLARE data_venda DATETIME;
+  DECLARE v_prod INT;
+  DECLARE v_qtd INT;
+  DECLARE v_preco DECIMAL(10,2);
+  DECLARE v_desc DECIMAL(10,2);
+  DECLARE v_forma VARCHAR(20);
   WHILE i <= 30 DO
     SET data_venda=DATE_ADD('2026-09-02 10:00:00',INTERVAL i*2 DAY);
+    -- A pomada matte é o item mais vendido e termina abaixo do estoque mínimo;
+    -- as demais vendas se distribuem entre os outros produtos de revenda.
+    SET v_prod = IF(MOD(i,2)=0, 1, 2 + MOD(i,9));
+    SET v_qtd  = IF(MOD(i,2)=0, 2, 1);
+    SELECT preco_venda INTO v_preco FROM produto WHERE id_produto = v_prod;
+    SET v_desc = IF(MOD(i,7)=0, 5.00, NULL);
+    SET v_forma = CASE MOD(i,4) WHEN 0 THEN 'Dinheiro' WHEN 1 THEN 'Pix' WHEN 2 THEN 'Debito' ELSE 'Credito' END;
     INSERT INTO venda (id_usuario,id_cliente,data_hora,status,valor_total,forma_pagamento)
-    VALUES (2,1+MOD(i,32),data_venda,'Aberta',0,NULL);
+    VALUES (2,IF(MOD(i,5)=0,NULL,1+MOD(i,32)),data_venda,'Aberta',0,NULL);
     SET venda_id=LAST_INSERT_ID();
     INSERT INTO item_venda (id_venda,id_produto,quantidade,preco_unitario,desconto_unitario)
-    VALUES (venda_id,1,1,42.90,NULL);
-    UPDATE venda SET status='Concluida',valor_total=42.90,forma_pagamento=IF(MOD(i,3)=0,'Dinheiro','Pix') WHERE id_venda=venda_id;
+    VALUES (venda_id,v_prod,v_qtd,v_preco,v_desc);
+    UPDATE venda SET status='Concluida',valor_total=v_qtd*(v_preco-COALESCE(v_desc,0)),forma_pagamento=v_forma WHERE id_venda=venda_id;
     INSERT INTO movimento_caixa (id_usuario,id_venda,tipo,forma_pagamento,valor,data_hora)
-    VALUES (2,venda_id,'Entrada',IF(MOD(i,3)=0,'Dinheiro','Pix'),42.90,data_venda);
+    VALUES (2,venda_id,'Entrada',v_forma,v_qtd*(v_preco-COALESCE(v_desc,0)),data_venda);
     SET i=i+1;
   END WHILE;
 END$$
@@ -252,15 +319,23 @@ VALUES (1,1,1,'Compra #1 - Distribuidora','Fornecedor',2587.00,'2026-09-05','Abe
 UPDATE conta_pagar SET status='Paga',data_baixa='2026-09-04 09:00:00',forma_baixa='Pix' WHERE id_conta=1;
 UPDATE conta_pagar SET status='Paga',data_baixa='2026-09-04 09:10:00',forma_baixa='Pix' WHERE id_conta=2;
 UPDATE conta_pagar SET status='Paga',data_baixa='2026-09-17 11:00:00',forma_baixa='Dinheiro' WHERE id_conta=3;
+-- Contas de outubro e novembro: uma paga, uma atrasada e uma ainda a vencer (cenários do G09).
+INSERT INTO conta_pagar (id_fornecedor,id_compra,id_usuario,descricao,categoria,valor,data_vencimento,status)
+VALUES (NULL,NULL,1,'Aluguel - outubro/2026','Aluguel',2400.00,'2026-10-05','Aberta'),
+       (NULL,NULL,1,'Aluguel - novembro/2026','Aluguel',2400.00,'2026-11-05','Atrasada'),
+       (NULL,NULL,1,'Energia elétrica - novembro/2026','Energia',318.40,'2026-11-20','Aberta');
+UPDATE conta_pagar SET status='Paga',data_baixa='2026-10-05 09:00:00',forma_baixa='Pix' WHERE id_conta=4;
 
 -- O fechamento é ligado enquanto está aberto; depois é encerrado e um novo caixa é aberto.
 INSERT INTO fechamento_caixa (id_usuario,aberto_em,saldo_abertura,status) VALUES (1,'2026-09-01 08:00:00',200.00,'Aberto');
 SET @fechamento=LAST_INSERT_ID();
 UPDATE movimento_caixa SET id_fechamento=@fechamento
 WHERE id_movimento > 0 AND data_hora < '2026-11-01 00:00:00';
+-- Na contagem do dinheiro faltaram R$ 12,50 (troco); as demais formas conferem com o extrato.
 INSERT INTO fechamento_forma (id_fechamento,forma_pagamento,valor_esperado,valor_conferido)
 SELECT @fechamento,forma_pagamento,SUM(CASE WHEN tipo='Entrada' THEN valor WHEN tipo IN ('Saida','Estorno') THEN -valor ELSE 0 END),
        SUM(CASE WHEN tipo='Entrada' THEN valor WHEN tipo IN ('Saida','Estorno') THEN -valor ELSE 0 END)
+       - IF(forma_pagamento='Dinheiro',12.50,0)
 FROM movimento_caixa WHERE id_fechamento=@fechamento GROUP BY forma_pagamento;
 UPDATE fechamento_caixa SET status='Fechado',fechado_em='2026-10-31 19:30:00' WHERE id_fechamento=@fechamento;
 INSERT INTO fechamento_caixa (id_usuario,aberto_em,saldo_abertura,status) VALUES (2,'2026-11-02 08:00:00',200.00,'Aberto');
