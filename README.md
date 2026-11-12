@@ -320,7 +320,7 @@ O relatório técnico é este `README.md`, na raiz da branch `main`. Os demais a
 | Evidências do local e da entrevista | [levantamento/evidencias/](levantamento/evidencias/) (JPG ou PNG) |
 | Script SQL completo (com consultas, auditorias e testes) | [docs/script.sql](docs/script.sql) |
 | Massa de dados | [docs/massa-de-dados.sql](docs/massa-de-dados.sql) |
-| Apresentação | [docs/slides.pptx](docs/slides.pptx) |
+| Apresentação | [docs/slides.pptx](docs/slides.pptx) e [vídeo no YouTube](https://www.youtube.com/watch?v=BFF4zciVx5s) |
 
 O histórico de commits registra o desenvolvimento ao longo do tempo e a contribuição dos integrantes com suas próprias contas do GitHub.
 
@@ -339,5 +339,9 @@ O grupo declarou uso de Gemini e DeepSeek na organização do README, nos requis
 As fontes utilizadas foram o levantamento do grupo, a foto feita no local e os dados de identificação da organização. O grupo deve registrar as respostas do responsável e conferir informações fiscais e sanitárias com profissionais competentes. Um risco do uso de IA é transformar uma prática comum em fato da barbearia; por isso, parâmetros como sinal, prazo de cancelamento e tolerância estão sinalizados como pendentes de confirmação. Na massa de dados, a IA gerou volumes coerentes com as regras do banco, mas os números (por exemplo, cinco atendimentos por profissional por dia) são parâmetros do grupo e não dados informados pela barbearia. Uma primeira versão da massa distribuía os serviços só pelo horário, de modo que um profissional nunca fazia barba; isso foi corrigido para variar também pelo dia.
 
 ## 7. Apresentação Corporativa Final
+
+**Vídeo da apresentação:** [https://www.youtube.com/watch?v=BFF4zciVx5s](https://www.youtube.com/watch?v=BFF4zciVx5s)
+
+**Slides:** [docs/slides.pptx](docs/slides.pptx)
 
 O pitch de oito minutos apresenta, nesta ordem: problema de gestão da barbearia; solução proposta; modelo lógico; execução do SQL; consultas gerenciais e de auditoria; potencial de BI/IA; benefícios para a tomada de decisão. Os slides usam texto curto e apoio visual. Todos os integrantes participam da apresentação e da defesa do modelo.
