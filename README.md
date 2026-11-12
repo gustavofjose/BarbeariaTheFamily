@@ -19,6 +19,7 @@
 - **CNPJ:** 61.946.399/0001-92
 - **Endereço:** Rua Sonho Gaúcho, 352, Jardim São Nicolau, São Paulo, SP, CEP 03685-000
 - **Telefone:** (11) 98520-6485
+- **Perfil no Google:** [https://share.google/BufdRAcPzCbPxCIk7](https://share.google/BufdRAcPzCbPxCIk7)
 
 ## 1. Relatório Técnico Final
 
@@ -30,9 +31,17 @@ Este projeto especifica a base de dados de gestão da Barbearia The Family Hair.
 
 A The Family Hair é uma barbearia de pequeno porte situada na Rua Sonho Gaúcho, 352, Jardim São Nicolau, São Paulo, SP. O repositório guarda a foto feita no local, o endereço, o telefone, a razão social e o CNPJ. O levantamento inicial registra duas cadeiras e cita o barbeiro Victor. O sistema foi preparado para mais de um profissional, pois a agenda precisa identificar quem realizará cada atendimento.
 
+**Porte em números.** É uma organização com fins lucrativos, com duas pessoas atendendo (o proprietário William e o barbeiro Victor) em duas cadeiras, de terça a sábado, das 08h às 19h. A meta informada é de oito a nove cortes por profissional por dia (RN06), o que dá uma capacidade de 80 a 90 atendimentos por semana. A massa de dados (seção 4) usa cinco atendimentos por profissional por dia, cerca de 50 por semana, que é a ocupação medida pelo KPI G10.
+
 O problema central é P1, a organização dos horários quando há cancelamento, atraso ou falta. O modelo também trata P2, a falta de um histórico único para pagamentos e atendimentos, e P3, o acompanhamento de produtos, compras, estoque, contas a pagar e caixa. No [`script.sql`](docs/script.sql), P1 é respondido por G01, G02, G08 e G10; P2 por S01, G03, G06 e G11; P3 por S02, G04, G05, G07 e G09 (ver a tabela de rastreabilidade da seção 1.6).
 
 O escopo reúne os dados de agenda, atendimento, pagamentos, produtos, compras, estoque e financeiro. Assim, o projeto não fica restrito ao agendamento. Detalhes que ainda dependem da confirmação do responsável, como pagamento antecipado, tolerância de atraso e a rotina atual de estoque, estão identificados no levantamento e não são apresentados como fatos da operação.
+
+#### Justificativa da escolha
+
+Escolhemos a Barbearia The Family Hair porque ela nos permitiu analisar e documentar processos reais de um negócio de serviços, principalmente o cadastro de clientes, os profissionais, os serviços oferecidos e a agenda. A barbearia também é um bom caso para um banco de dados relacional: essas informações se relacionam entre si, e organizá-las num modelo com integridade reduz cadastros duplicados e dados inconsistentes. Com ela, aplicamos na prática conceitos de modelagem de dados como entidades, atributos e chaves primárias e estrangeiras.
+
+Nenhum integrante do grupo trabalha na barbearia nem tem vínculo familiar com os responsáveis; a relação é, no máximo, de amizade.
 
 #### Entrevista e levantamento
 
@@ -124,6 +133,23 @@ As regras RN10, RN11, RN12 e RN18 são parâmetros propostos para o sistema e pr
 | RN15 | Higienização/desinfecção entre atendimentos e esterilização quando aplicável. | Registrar procedimento e responsável de acordo com instruções do fabricante e normas sanitárias competentes; o sistema não define parâmetros técnicos de esterilização. |
 | RN16 | Documentos fiscais, tributos e prazos de guarda dependem do enquadramento da organização. | `DOCUMENTO_FISCAL` guarda somente número, data, tipo e status do documento. A obrigatoriedade de emissão deve ser confirmada com a contabilidade; o sistema não calcula tributos. |
 | RN17 | Dados pessoais precisam de finalidade, controle de acesso e período de retenção; marketing é separado e opcional. | Coletar o mínimo necessário e restringir o acesso. A política de retenção será definida pela organização antes da implantação. |
+
+#### Processos, requisitos e regras prováveis não incluídos
+
+Itens comuns em barbearias que ficaram fora do modelo, e por quê:
+
+| Tipo | Item comum no setor | Por que ficou de fora |
+|---|---|---|
+| Processo | Comissão e folha de pagamento dos barbeiros | Os dois profissionais são o proprietário e o filho; não foi observada divisão de comissão. A remuneração fica fora do sistema de gestão operacional. |
+| Processo | Escala de equipe e turnos | Com duas cadeiras fixas, a disponibilidade é dada pelo expediente em `REGRA_CALENDARIO` e pelo vínculo do agendamento ao profissional. |
+| Processo | Programa de fidelidade, pacotes ou assinatura mensal | Não foi observado na barbearia. Pode ser incluído depois sem mudar as tabelas atuais. |
+| Processo | Venda online e entrega de produtos | A venda de produtos é só no balcão (PN09). |
+| Requisito | Cálculo de comissão por atendimento | Mesmo motivo do processo de comissão. |
+| Requisito | Cálculo de tributos e emissão de nota fiscal | Depende da contabilidade (RN16); o banco guarda só a referência do documento em `DOCUMENTO_FISCAL`. |
+| Requisito | Ficha técnica do cliente (alergias, químicas usadas) | Seria dado de saúde, sensível pela LGPD; pela coleta mínima (RN17) não é armazenado. |
+| Requisito | Integração automática com WhatsApp, maquininha ou banco | São requisitos técnicos da aplicação, não do banco de dados; o banco registra o resultado (pagamento, lembrete). |
+| Regra | Multa automática por falta | Decisão do projeto (RN12): a falta fica registrada, sem cobrança adicional automática. |
+| Regra | Limite de reservas por cliente | Não foi apontado como problema; a meta de cortes por dia é indicador, não limite (RN06). |
 
 #### Pontos a confirmar com o cliente
 
@@ -224,7 +250,29 @@ O modelo conceitual possui 25 entidades/tabelas. Cliente e profissional se relac
 - Avaliação tem vínculo único com agendamento para limitar a uma avaliação por atendimento concluído.
 - Movimentos de estoque e caixa guardam cada entrada/saída, em vez de sobrescrever somente um saldo; isso permite auditoria e reconstrução histórica.
 - FKs asseguram que as referências existam. Sobreposição temporal, presença mínima de itens e origem exclusiva de movimentos exigem validação transacional e restrições compatíveis com MySQL.
-- `NOT NULL`, `UNIQUE`, `CHECK` e `DEFAULT` documentam e implementam as regras operacionais RN01 a RN18.
+- `NOT NULL`, `UNIQUE`, `CHECK` e `DEFAULT` documentam e implementam as regras de negócio, conforme a tabela abaixo.
+
+**Restrições e a regra que cada uma implementa** (nomes conforme o [`script.sql`](docs/script.sql)):
+
+| Regra | Restrição no banco |
+|---|---|
+| RN01 | `agendamento.id_cliente` e `id_profissional` são `NOT NULL` com FK; avaliação só é aceita para agendamento concluído (gatilho `trg_avaliacao_bi`). |
+| RN02, RN11 | Gatilho `trg_agendamento_bu`: a confirmação exige serviço principal e pagamento integral aprovado; `ck_agend_confirmado` exige `confirmado_em`. |
+| RN03 | `ck_pag_forma`, `ck_venda_forma`, `ck_conta_forma` e `ck_ff_forma`: só Pix, Credito, Debito e Dinheiro. |
+| RN04 | `ck_regra_horarios`, `ck_regra_tipo_campos` e o procedimento `sp_validar_agenda`, que recusa horário fora do expediente ou em dia fechado. |
+| RN05 | `preco_contratado` e `duracao_contratada` `NOT NULL` com `ck_ags_preco`/`ck_ags_duracao`; o gatilho de confirmação exige duração igual à soma dos itens. |
+| RN06 | Sem restrição, por decisão: é indicador (KPI G10), não limite. |
+| RN07 | `ck_agend_status` (valores permitidos) e `ck_agend_cancelado` (cancelamento exige `cancelado_em`); o agendamento cancelado não é apagado. |
+| RN08 | `ativo` com `DEFAULT TRUE`; `uq_servico_nome_ativo` impede dois serviços ativos com o mesmo nome; FKs impedem excluir cadastro com histórico. |
+| RN09 | `sp_validar_agenda` com trava `SELECT … FOR UPDATE` no profissional: recusa horários sobrepostos, inclusive em gravações simultâneas. |
+| RN10 | `checkin_em` e o status `Faltou` registram chegada e falta. |
+| RN12 | `ck_pag_estorno_origem` (estorno referencia a cobrança); `trg_pagamento_bi` impede estornar mais que o pago; `trg_pagamento_bd` impede apagar pagamento. |
+| RN13 | `trg_compra_au` gera entrada só quando a compra passa a `Recebida`; `trg_venda_au` gera a saída; `ck_mest_origem` e `ck_mest_direcao` exigem origem e motivo; saldo negativo é recusado. |
+| RN14 | `trg_movimento_caixa_bu`/`_bd` impedem alterar ou apagar movimento de caixa fechado; `uq_fech_um_aberto` permite um caixa aberto por vez. |
+| RN15 | `ck_higi_etapa` e `ck_higi_resultado` em `REGISTRO_HIGIENIZACAO`. |
+| RN16 | `ck_df_origem`: cada documento fiscal tem exatamente uma origem (agendamento, venda ou compra). |
+| RN17 | `aceita_marketing` com `DEFAULT FALSE`; `ck_cliente_consent` e `ck_cliente_revogacao` exigem data de consentimento e de revogação. |
+| RN18 | `ck_agend_expira` exige `expira_em` em reservas pendentes; o evento `ev_expirar_reservas` cancela as vencidas. |
 - Serviços, adicionais e profissionais são inativados em vez de excluídos, mantendo a integridade de operações passadas.
 
 ### 1.6 Proposta analítica para BI e IA
@@ -273,7 +321,7 @@ Os testes T01 a T05 tentam gravar dados inválidos e confirmam que o banco bloqu
 
 ## 2. Modelo Lógico Relacional
 
-O modelo lógico é apresentado em [diagrama do modelo lógico](diagramas/modelo-logico.png), elaborado no brModelo. Ele contém tabelas, colunas e tipos, PK, FK e cardinalidades convertidas. As demais restrições de integridade estão no dicionário e no script SQL.
+O modelo lógico é apresentado em [diagrama do modelo lógico](diagramas/modelo-logico.png), elaborado no dbdiagram.io a partir de [docs/diagrama.dbml](docs/diagrama.dbml). Ele contém tabelas, colunas e tipos, PK, FK e cardinalidades convertidas. O diagrama foi gerado com tipos genéricos (`TIMESTAMPTZ`, `NUMERIC`), que no script MySQL correspondem a `DATETIME` e `DECIMAL`. As demais restrições de integridade estão no dicionário e no script SQL.
 
 ## 3. Script SQL Completo
 
