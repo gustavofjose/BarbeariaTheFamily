@@ -387,20 +387,23 @@ footer .team{margin-top:6px;color:var(--ink)}
     <div class="entity-head"><span class="n">5.1</span><h3>CLIENTE</h3></div>
     <pre class="notation">CLIENTE = @id_cliente + nome + telefone + (email) +
 data_cadastro + (data_atualizacao) + ativo +
-aceita_marketing + (data_consentimento_marketing)</pre>
+aceita_marketing + (data_consentimento_marketing) +
+(data_revogacao_marketing) + telefone_normalizado</pre>
     <div class="reading"><b class="l">Leitura</b><p>Cadastro mínimo para localizar o cliente, confirmar reservas e prestar atendimento. No primeiro contato, pesquisar duplicidade, conferir o telefone com o titular, deixar e-mail opcional e informar a finalidade dos dados. Marketing é independente dos avisos operacionais e deve ser opt-in, comprovável e revogável; não coletar CPF/data de nascimento sem necessidade demonstrada.</p></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead>
+      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead>
       <tbody>
-        <tr><td><code>id_cliente</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador único do cliente.</td><td>Auto incremento.</td></tr>
-        <tr><td><code>nome</code></td><td>VARCHAR(100)</td><td><span class="yes">Sim</span></td><td>Nome completo (ex.: “Carlos Mendes”, fictício).</td><td>Dado pessoal — acesso restrito (LGPD).</td></tr>
-        <tr><td><code>telefone</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span></td><td>Telefone/WhatsApp para contato e lembretes.</td><td>Usado nas notificações de 1 dia e 1 hora antes.</td></tr>
-        <tr><td><code>email</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>E-mail para envio de confirmações.</td><td>Se informado, deve ter formato válido.</td></tr>
-        <tr><td><code>data_cadastro</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Data/hora de criação do cadastro.</td><td>Gerada pelo sistema.</td></tr>
-        <tr><td><code>data_atualizacao</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Última alteração dos dados cadastrais.</td><td>Atualizar apenas quando houver mudança.</td></tr>
-        <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Indica se o cadastro está ativo para novas interações.</td><td>Desativar sem apagar registros financeiros sujeitos a retenção.</td></tr>
-        <tr><td><code>aceita_marketing</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Opção para comunicações promocionais.</td><td>Default falso; não afeta reserva nem atendimento.</td></tr>
-        <tr><td><code>data_consentimento_marketing</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Momento da adesão vigente.</td><td>Ao revogar, definir aceita_marketing = falso e registrar data/canal da revogação em evento de auditoria.</td></tr>
+        <tr><td><code>id_cliente</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador único do cliente.</td><td>Auto incremento.</td></tr>
+        <tr><td><code>nome</code></td><td>VARCHAR(100)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Nome completo (ex.: “Carlos Mendes”, fictício).</td><td>Dado pessoal — acesso restrito (LGPD).</td></tr>
+        <tr><td><code>telefone</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Telefone/WhatsApp para contato e lembretes.</td><td>Usado nas notificações de 1 dia e 1 hora antes.</td></tr>
+        <tr><td><code>email</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>E-mail para envio de confirmações.</td><td>Se informado, deve ter formato válido.</td></tr>
+        <tr><td><code>data_cadastro</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>Data/hora atual</td><td>Data/hora de criação do cadastro.</td><td>Gerada pelo sistema.</td></tr>
+        <tr><td><code>data_atualizacao</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Não</td><td>Atualizado automaticamente</td><td>Última alteração dos dados cadastrais.</td><td>Atualizar apenas quando houver mudança.</td></tr>
+        <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Não</td><td>Verdadeiro</td><td>Indica se o cadastro está ativo para novas interações.</td><td>Desativar sem apagar registros financeiros sujeitos a retenção.</td></tr>
+        <tr><td><code>aceita_marketing</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Não</td><td>Falso</td><td>Opção para comunicações promocionais.</td><td>Default falso; não afeta reserva nem atendimento.</td></tr>
+        <tr><td><code>data_consentimento_marketing</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Momento da adesão vigente.</td><td>Ao revogar, definir aceita_marketing = falso e registrar data/canal da revogação em evento de auditoria.</td></tr>
+        <tr><td><code>data_revogacao_marketing</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Momento em que o cliente revogou o consentimento de marketing.</td><td>Só existe após um consentimento; com ela, aceita_marketing passa a falso (RN17).</td></tr>
+        <tr><td><code>telefone_normalizado</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span></td><td>Sim</td><td>Calculado</td><td>Telefone só com dígitos e sem o DDI 55, gerado a partir de telefone.</td><td>Coluna gerada, com 10 ou 11 dígitos; o UNIQUE impede cadastro duplicado pelo mesmo telefone (RF01).</td></tr>
       </tbody>
     </table></div>
     <p class="indices"><strong>Índices:</strong> PK id_cliente; índice em telefone para busca/deduplicação; aplicar proteção e acesso restrito aos dados pessoais.</p>
@@ -413,13 +416,13 @@ aceita_marketing + (data_consentimento_marketing)</pre>
 (telefone) + ativo</pre>
     <div class="reading"><b class="l">Leitura</b><p>Representa os barbeiros que atendem na casa (atualmente dois, um por cadeira). É essencial para gerenciar a agenda de cada um e evitar sobreposição de horários. O campo <code>ativo</code> permite desligar um profissional sem apagar seu histórico de agendamentos.</p></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead>
+      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead>
       <tbody>
-        <tr><td><code>id_profissional</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador único do barbeiro.</td><td>—</td></tr>
-        <tr><td><code>nome</code></td><td>VARCHAR(100)</td><td><span class="yes">Sim</span></td><td>Nome do profissional.</td><td>—</td></tr>
-        <tr><td><code>especialidade</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Área de especialidade (ex.: barba, coloração).</td><td>—</td></tr>
-        <tr><td><code>telefone</code></td><td>VARCHAR(20)</td><td><span class="no">Não</span></td><td>Telefone do profissional.</td><td>—</td></tr>
-        <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Indica se o profissional está ativo.</td><td>Inativo some das telas de agendamento, sem apagar histórico (RN08).</td></tr>
+        <tr><td><code>id_profissional</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador único do barbeiro.</td><td>—</td></tr>
+        <tr><td><code>nome</code></td><td>VARCHAR(100)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Nome do profissional.</td><td>—</td></tr>
+        <tr><td><code>especialidade</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Área de especialidade (ex.: barba, coloração).</td><td>—</td></tr>
+        <tr><td><code>telefone</code></td><td>VARCHAR(20)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Telefone do profissional.</td><td>—</td></tr>
+        <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Não</td><td>Verdadeiro</td><td>Indica se o profissional está ativo.</td><td>Inativo some das telas de agendamento, sem apagar histórico (RN08).</td></tr>
       </tbody>
     </table></div>
     <p class="indices"><strong>Índices:</strong> PK id_profissional; índice em ativo.</p>
@@ -437,25 +440,25 @@ politica_reserva_versao + politica_aceita_em + criado_em + expira_em +
     <div class="reading"><b class="l">Leitura</b><p>Entidade central do modelo: conecta cliente, profissional, serviços, extras, pagamento e avaliação. Contém <strong>apenas uma chave estrangeira para cliente e uma para profissional</strong>; a ligação com serviços e extras é feita pelas tabelas associativas, e pagamento/avaliação apontam para o agendamento (não o contrário).</p></div>
     <div class="note">Cardinalidades: Cliente (0,N)–Agendamento (1,1); Profissional (0,N)–Agendamento (1,1); serviços (1,N) e extras (0,N) via associativas; pagamentos (0,N) por tentativas/reembolsos, exigindo valor total aprovado antes do status Confirmado; avaliações (0,1).</div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead>
+      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead>
       <tbody>
-        <tr><td><code>id_agendamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador do agendamento.</td><td>—</td></tr>
-        <tr><td><code>id_cliente</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Cliente que realizou o agendamento.</td><td>Cliente (1,1): todo agendamento tem cliente (RN01).</td></tr>
-        <tr><td><code>id_profissional</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Profissional que fará o atendimento.</td><td>Sem sobreposição de horário para o mesmo profissional (RN09).</td></tr>
-        <tr><td><code>id_regra_calendario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Regra semanal ou exceção que autorizou o horário.</td><td>Deve estar vigente na data e cobrir o intervalo inteiro; exceção de data prevalece sobre regra semanal.</td></tr>
-        <tr><td><code>data</code></td><td>DATE</td><td><span class="yes">Sim</span></td><td>Data do agendamento.</td><td>Terça a sábado; feriados conforme calendário publicado pela barbearia (RN04).</td></tr>
-        <tr><td><code>hora_inicio</code></td><td>TIME</td><td><span class="yes">Sim</span></td><td>Hora de início.</td><td>Entre 08:00 e 19:00.</td></tr>
-        <tr><td><code>hora_fim</code></td><td>TIME</td><td><span class="yes">Sim</span></td><td>Hora de término.</td><td>Calculada pela soma das durações de serviços e extras (RN05); não pode passar de 19:00.</td></tr>
-        <tr><td><code>status</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span> <span class="no">(escolha)</span></td><td>Aguardando_pagamento, Confirmado, Concluido, Cancelado ou Faltou.</td><td>Só confirmar após receber o total; preservar horário e autoria das transições de status.</td></tr>
-        <tr><td><code>politica_reserva_versao</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span></td><td>Versão da política de atraso, cancelamento e reembolso apresentada.</td><td>Guardar cópia/versionamento da política para demonstrar o texto vigente.</td></tr>
-        <tr><td><code>politica_aceita_em</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Data/hora do aceite explícito pelo cliente.</td><td>Anterior à cobrança/confirmação; não substituir por aceite de marketing.</td></tr>
-        <tr><td><code>criado_em</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Data/hora da solicitação da reserva.</td><td>Gerada pelo sistema.</td></tr>
-        <tr><td><code>expira_em</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Prazo para pagamento da reserva pendente.</td><td>Obrigatória enquanto Aguardando_pagamento; expirando, cancelar tentativa e liberar horário.</td></tr>
-        <tr><td><code>confirmado_em</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Data/hora em que pagamento e horário foram confirmados.</td><td>Obrigatória quando status = Confirmado/Concluido/Faltou.</td></tr>
-        <tr><td><code>checkin_em</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Horário de chegada do cliente.</td><td>Usado para apurar atraso conforme política divulgada.</td></tr>
-        <tr><td><code>cancelado_em</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Data/hora da solicitação de cancelamento.</td><td>Obrigatória quando status = Cancelado.</td></tr>
-        <tr><td><code>motivo_cancelamento</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Motivo opcional informado pelo cliente ou operador.</td><td>Não solicitar dado sensível; acesso restrito.</td></tr>
-        <tr><td><code>observacao</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Observações gerais.</td><td>—</td></tr>
+        <tr><td><code>id_agendamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador do agendamento.</td><td>—</td></tr>
+        <tr><td><code>id_cliente</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Cliente que realizou o agendamento.</td><td>Cliente (1,1): todo agendamento tem cliente (RN01).</td></tr>
+        <tr><td><code>id_profissional</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Profissional que fará o atendimento.</td><td>Sem sobreposição de horário para o mesmo profissional (RN09).</td></tr>
+        <tr><td><code>id_regra_calendario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Regra semanal ou exceção que autorizou o horário.</td><td>Deve estar vigente na data e cobrir o intervalo inteiro; exceção de data prevalece sobre regra semanal.</td></tr>
+        <tr><td><code>data</code></td><td>DATE</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Data do agendamento.</td><td>Terça a sábado; feriados conforme calendário publicado pela barbearia (RN04).</td></tr>
+        <tr><td><code>hora_inicio</code></td><td>TIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Hora de início.</td><td>Entre 08:00 e 19:00.</td></tr>
+        <tr><td><code>hora_fim</code></td><td>TIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Hora de término.</td><td>Calculada pela soma das durações de serviços e extras (RN05); não pode passar de 19:00.</td></tr>
+        <tr><td><code>status</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span> <span class="no">(escolha)</span></td><td>Não</td><td>Aguardando_pagamento</td><td>Aguardando_pagamento, Confirmado, Concluido, Cancelado ou Faltou.</td><td>Só confirmar após receber o total; preservar horário e autoria das transições de status.</td></tr>
+        <tr><td><code>politica_reserva_versao</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Versão da política de atraso, cancelamento e reembolso apresentada.</td><td>Guardar cópia/versionamento da política para demonstrar o texto vigente.</td></tr>
+        <tr><td><code>politica_aceita_em</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Data/hora do aceite explícito pelo cliente.</td><td>Anterior à cobrança/confirmação; não substituir por aceite de marketing.</td></tr>
+        <tr><td><code>criado_em</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>Data/hora atual</td><td>Data/hora da solicitação da reserva.</td><td>Gerada pelo sistema.</td></tr>
+        <tr><td><code>expira_em</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Prazo para pagamento da reserva pendente.</td><td>Obrigatória enquanto Aguardando_pagamento; expirando, cancelar tentativa e liberar horário.</td></tr>
+        <tr><td><code>confirmado_em</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Data/hora em que pagamento e horário foram confirmados.</td><td>Obrigatória quando status = Confirmado/Concluido/Faltou.</td></tr>
+        <tr><td><code>checkin_em</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Horário de chegada do cliente.</td><td>Usado para apurar atraso conforme política divulgada.</td></tr>
+        <tr><td><code>cancelado_em</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Data/hora da solicitação de cancelamento.</td><td>Obrigatória quando status = Cancelado.</td></tr>
+        <tr><td><code>motivo_cancelamento</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Motivo opcional informado pelo cliente ou operador.</td><td>Não solicitar dado sensível; acesso restrito.</td></tr>
+        <tr><td><code>observacao</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Observações gerais.</td><td>—</td></tr>
       </tbody>
     </table></div>
     <p class="indices"><strong>Índices:</strong> PK id_agendamento; índice composto (id_profissional, data, hora_inicio) para a checagem de conflito em menos de 2 s; índices em id_cliente (histórico), id_regra_calendario e status.</p>
@@ -463,24 +466,24 @@ politica_reserva_versao + politica_aceita_em + criado_em + expira_em +
     <h5>AGENDAMENTO_SERVICO (associativa)</h5>
     <pre class="notation">AGENDAMENTO_SERVICO = @(id_agendamento + id_servico)</pre>
     <div class="table-wrap"><table>
-      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead>
+      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead>
       <tbody>
-        <tr><td><code>id_agendamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>Agendamento de origem.</td><td>Agendamento (1,n): ao menos um serviço; mínimo garantido por validação transacional.</td></tr>
-        <tr><td><code>id_servico</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>Serviço contratado.</td><td>PK composta impede repetir o mesmo serviço no mesmo agendamento.</td></tr>
-        <tr><td><code>preco_contratado</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Preço unitário aprovado no agendamento.</td><td>Snapshot imutável para histórico, mesmo após reajuste do catálogo.</td></tr>
-        <tr><td><code>duracao_contratada</code></td><td>SMALLINT</td><td><span class="yes">Sim</span></td><td>Duração estimada contratada, em minutos.</td><td>Usada para calcular a janela reservada.</td></tr>
+        <tr><td><code>id_agendamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>PK composta (id_agendamento + id_servico)</td><td>—</td><td>Agendamento de origem.</td><td>Agendamento (1,n): ao menos um serviço; mínimo garantido por validação transacional.</td></tr>
+        <tr><td><code>id_servico</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>PK composta (id_agendamento + id_servico)</td><td>—</td><td>Serviço contratado.</td><td>PK composta impede repetir o mesmo serviço no mesmo agendamento.</td></tr>
+        <tr><td><code>preco_contratado</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Preço unitário aprovado no agendamento.</td><td>Snapshot imutável para histórico, mesmo após reajuste do catálogo.</td></tr>
+        <tr><td><code>duracao_contratada</code></td><td>SMALLINT</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Duração estimada contratada, em minutos.</td><td>Usada para calcular a janela reservada.</td></tr>
       </tbody>
     </table></div>
 
     <h5>AGENDAMENTO_EXTRA (associativa)</h5>
     <pre class="notation">AGENDAMENTO_EXTRA = @(id_agendamento + id_extra)</pre>
     <div class="table-wrap"><table>
-      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead>
+      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead>
       <tbody>
-        <tr><td><code>id_agendamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>Agendamento de origem.</td><td>Agendamento (0,n): extras são opcionais.</td></tr>
-        <tr><td><code>id_extra</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>Serviço extra contratado.</td><td>PK composta evita duplicidade.</td></tr>
-        <tr><td><code>preco_contratado</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Preço adicional aceito no agendamento.</td><td>Snapshot imutável para histórico.</td></tr>
-        <tr><td><code>duracao_contratada</code></td><td>SMALLINT</td><td><span class="yes">Sim</span></td><td>Duração adicional, em minutos.</td><td>Incluída no cálculo de disponibilidade.</td></tr>
+        <tr><td><code>id_agendamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>PK composta (id_agendamento + id_extra)</td><td>—</td><td>Agendamento de origem.</td><td>Agendamento (0,n): extras são opcionais.</td></tr>
+        <tr><td><code>id_extra</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>PK composta (id_agendamento + id_extra)</td><td>—</td><td>Serviço extra contratado.</td><td>PK composta evita duplicidade.</td></tr>
+        <tr><td><code>preco_contratado</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Preço adicional aceito no agendamento.</td><td>Snapshot imutável para histórico.</td></tr>
+        <tr><td><code>duracao_contratada</code></td><td>SMALLINT</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Duração adicional, em minutos.</td><td>Incluída no cálculo de disponibilidade.</td></tr>
       </tbody>
     </table></div>
   </article>
@@ -488,17 +491,18 @@ politica_reserva_versao + politica_aceita_em + criado_em + expira_em +
   <!-- SERVICO -->
   <article class="entity" id="servico" data-k="servico">
     <div class="entity-head"><span class="n">5.4</span><h3>SERVICO</h3></div>
-    <pre class="notation">SERVICO = @id_servico + nome + (descricao) + duracao + preco + ativo</pre>
+    <pre class="notation">SERVICO = @id_servico + nome + (descricao) + duracao + preco + ativo + (nome_ativo)</pre>
     <div class="reading"><b class="l">Leitura</b><p>Catálogo de serviços principais (corte, barba, combo, sobrancelha, coloração, progressiva). A duração em minutos alimenta o cálculo de <code>hora_fim</code>. Desativar um serviço preserva o histórico de agendamentos antigos.</p></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead>
+      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead>
       <tbody>
-        <tr><td><code>id_servico</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador do serviço.</td><td>—</td></tr>
-        <tr><td><code>nome</code></td><td>VARCHAR(100)</td><td><span class="yes">Sim</span></td><td>Nome do serviço (ex.: “Corte”, “Barba”).</td><td>Único entre serviços ativos.</td></tr>
-        <tr><td><code>descricao</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Descrição do serviço.</td><td>—</td></tr>
-        <tr><td><code>duracao</code></td><td>INT</td><td><span class="yes">Sim</span></td><td>Tempo estimado, em minutos.</td><td>Valor cadastrado pela barbearia; 40 min para corte é referência inicial (RN05), não constante imutável.</td></tr>
-        <tr><td><code>preco</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Valor do serviço.</td><td>Corrigido de FLOAT para DECIMAL.</td></tr>
-        <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Indica se o serviço está ativo.</td><td>Desativar, nunca excluir (RN08).</td></tr>
+        <tr><td><code>id_servico</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador do serviço.</td><td>—</td></tr>
+        <tr><td><code>nome</code></td><td>VARCHAR(100)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Nome do serviço (ex.: “Corte”, “Barba”).</td><td>Único entre serviços ativos.</td></tr>
+        <tr><td><code>descricao</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Descrição do serviço.</td><td>—</td></tr>
+        <tr><td><code>duracao</code></td><td>INT</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Tempo estimado, em minutos.</td><td>Valor cadastrado pela barbearia; 40 min para corte é referência inicial (RN05), não constante imutável.</td></tr>
+        <tr><td><code>preco</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Valor do serviço.</td><td>Corrigido de FLOAT para DECIMAL.</td></tr>
+        <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Não</td><td>Verdadeiro</td><td>Indica se o serviço está ativo.</td><td>Desativar, nunca excluir (RN08).</td></tr>
+        <tr><td><code>nome_ativo</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Sim</td><td>Calculado</td><td>Nome do serviço em minúsculas enquanto ativo; nulo quando inativo.</td><td>Coluna gerada; o UNIQUE impede dois serviços ativos com o mesmo nome, sem bloquear inativos (RN08).</td></tr>
       </tbody>
     </table></div>
     <p class="indices"><strong>Índices:</strong> PK id_servico; índice em ativo.</p>
@@ -510,14 +514,14 @@ politica_reserva_versao + politica_aceita_em + criado_em + expira_em +
     <pre class="notation">SERVICO_EXTRA = @id_extra + nome + (descricao) + preco + duracao + ativo</pre>
     <div class="reading"><b class="l">Leitura</b><p><code>SERVICO_EXTRA</code> é a entidade do catálogo de adicionais opcionais (hidratação capilar, design de sobrancelha, vaporização facial, óleo para barba e finalização). É separada de <code>SERVICO</code> porque os adicionais acrescentam tempo e valor ao agendamento, mas não são oferecidos isoladamente; a ligação é registrada em <code>AGENDAMENTO_EXTRA</code>.</p></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead>
+      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead>
       <tbody>
-        <tr><td><code>id_extra</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador do extra.</td><td>—</td></tr>
-        <tr><td><code>nome</code></td><td>VARCHAR(100)</td><td><span class="yes">Sim</span></td><td>Nome do extra (ex.: “Hidratação”).</td><td>—</td></tr>
-        <tr><td><code>descricao</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Descrição do extra.</td><td>—</td></tr>
-        <tr><td><code>preco</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Valor do extra.</td><td>—</td></tr>
-        <tr><td><code>duracao</code></td><td>INT</td><td><span class="yes">Sim</span></td><td>Tempo adicional, em minutos.</td><td>Somado ao fim do agendamento.</td></tr>
-        <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Indica se o extra está ativo.</td><td>RN08.</td></tr>
+        <tr><td><code>id_extra</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador do extra.</td><td>—</td></tr>
+        <tr><td><code>nome</code></td><td>VARCHAR(100)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Nome do extra (ex.: “Hidratação”).</td><td>—</td></tr>
+        <tr><td><code>descricao</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Descrição do extra.</td><td>—</td></tr>
+        <tr><td><code>preco</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Valor do extra.</td><td>—</td></tr>
+        <tr><td><code>duracao</code></td><td>INT</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Tempo adicional, em minutos.</td><td>Somado ao fim do agendamento.</td></tr>
+        <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Não</td><td>Verdadeiro</td><td>Indica se o extra está ativo.</td><td>RN08.</td></tr>
       </tbody>
     </table></div>
     <p class="indices"><strong>Índices:</strong> PK id_extra; índice em ativo.</p>
@@ -532,19 +536,19 @@ politica_reserva_versao + politica_aceita_em + criado_em + expira_em +
 (referencia_provedor) + (chave_idempotencia)</pre>
     <div class="reading"><b class="l">Leitura</b><p>Registra tentativas e capturas para o agendamento. O pagamento acontece no fluxo de criação da reserva: PIX/cartão aguardam confirmação do provedor; dinheiro só é considerado pago após recebimento físico no balcão. A reserva só passa a Confirmado quando os pagamentos aprovados totalizam o valor devido. Retentativas e estornos são novos registros, nunca sobrescrita do histórico.</p></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead>
+      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead>
       <tbody>
-        <tr><td><code>id_pagamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador da tentativa/lançamento financeiro.</td><td>—</td></tr>
-        <tr><td><code>id_agendamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Reserva a que a tentativa pertence.</td><td>FK indexada, não UNIQUE: preservar tentativas e estornos.</td></tr>
-        <tr><td><code>id_pagamento_origem</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Captura que este registro estorna, se aplicável.</td><td>Autorreferência; obrigatória para tipo_operacao = Estorno.</td></tr>
-        <tr><td><code>tipo_operacao</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Cobranca ou Estorno.</td><td>Estorno aponta para captura aprovada; não altera nem exclui origem.</td></tr>
-        <tr><td><code>forma_pagamento</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Pix, cartão de crédito, cartão de débito ou dinheiro.</td><td>Sem fiado. Nunca armazenar dados completos de cartão.</td></tr>
-        <tr><td><code>valor</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Valor positivo desta tentativa/captura/estorno.</td><td>Maior que zero; capturas aprovadas devem cobrir o total antes da confirmação.</td></tr>
-        <tr><td><code>status</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Pendente, Pago ou Falhou.</td><td>Pagamento aprovado usa Pago; estorno é registro novo de tipo Estorno.</td></tr>
-        <tr><td><code>criado_em</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Momento de início/registro da tentativa.</td><td>Gerado pelo servidor.</td></tr>
-        <tr><td><code>confirmado_em</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Momento em que provedor confirma ou dinheiro é recebido.</td><td>Obrigatório quando status = Pago.</td></tr>
-        <tr><td><code>referencia_provedor</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Identificador não secreto da transação no provedor.</td><td>Não guardar token, chave privada ou credencial.</td></tr>
-        <tr><td><code>chave_idempotencia</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Chave para impedir cobrança duplicada em retentativas de requisição.</td><td>Única por tentativa/escopo do provedor; nunca usar segredo de autenticação.</td></tr>
+        <tr><td><code>id_pagamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador da tentativa/lançamento financeiro.</td><td>—</td></tr>
+        <tr><td><code>id_agendamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Reserva a que a tentativa pertence.</td><td>FK indexada, não UNIQUE: preservar tentativas e estornos.</td></tr>
+        <tr><td><code>id_pagamento_origem</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Captura que este registro estorna, se aplicável.</td><td>Autorreferência; obrigatória para tipo_operacao = Estorno.</td></tr>
+        <tr><td><code>tipo_operacao</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>—</td><td>Cobranca ou Estorno.</td><td>Estorno aponta para captura aprovada; não altera nem exclui origem.</td></tr>
+        <tr><td><code>forma_pagamento</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>—</td><td>Pix, cartão de crédito, cartão de débito ou dinheiro.</td><td>Sem fiado. Nunca armazenar dados completos de cartão.</td></tr>
+        <tr><td><code>valor</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Valor positivo desta tentativa/captura/estorno.</td><td>Maior que zero; capturas aprovadas devem cobrir o total antes da confirmação.</td></tr>
+        <tr><td><code>status</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>—</td><td>Pendente, Pago ou Falhou.</td><td>Pagamento aprovado usa Pago; estorno é registro novo de tipo Estorno.</td></tr>
+        <tr><td><code>criado_em</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>Data/hora atual</td><td>Momento de início/registro da tentativa.</td><td>Gerado pelo servidor.</td></tr>
+        <tr><td><code>confirmado_em</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Momento em que provedor confirma ou dinheiro é recebido.</td><td>Obrigatório quando status = Pago.</td></tr>
+        <tr><td><code>referencia_provedor</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Sim</td><td>—</td><td>Identificador não secreto da transação no provedor.</td><td>Não guardar token, chave privada ou credencial.</td></tr>
+        <tr><td><code>chave_idempotencia</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Sim</td><td>—</td><td>Chave para impedir cobrança duplicada em retentativas de requisição.</td><td>Única por tentativa/escopo do provedor; nunca usar segredo de autenticação.</td></tr>
       </tbody>
     </table></div>
     <p class="indices"><strong>Índices:</strong> PK id_pagamento; índices em (id_agendamento, status) e (status, criado_em); FK id_pagamento_origem; unicidade composta por provedor e chave_idempotencia/referencia_provedor quando preenchidas.</p>
@@ -557,13 +561,13 @@ politica_reserva_versao + politica_aceita_em + criado_em + expira_em +
 (comentario) + data_avaliacao</pre>
     <div class="reading"><b class="l">Leitura</b><p>Permite ao cliente avaliar o serviço após a execução, apoiando a melhoria contínua e o controle de qualidade. Relacionamento 1:0..1 com AGENDAMENTO. Como o profissional já está no agendamento, a avaliação <strong>não</strong> precisa de ligação direta com PROFISSIONAL.</p></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead>
+      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead>
       <tbody>
-        <tr><td><code>id_avaliacao</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador da avaliação.</td><td>—</td></tr>
-        <tr><td><code>id_agendamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Agendamento avaliado.</td><td>UNIQUE; só após status Concluído.</td></tr>
-        <tr><td><code>nota</code></td><td>INT</td><td><span class="yes">Sim</span></td><td>Nota do atendimento.</td><td>CHECK entre 1 e 5.</td></tr>
-        <tr><td><code>comentario</code></td><td>VARCHAR(500)</td><td><span class="no">Não</span></td><td>Comentário do cliente.</td><td>—</td></tr>
-        <tr><td><code>data_avaliacao</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Data e hora da avaliação.</td><td>Posterior ao fim do agendamento.</td></tr>
+        <tr><td><code>id_avaliacao</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador da avaliação.</td><td>—</td></tr>
+        <tr><td><code>id_agendamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Sim</td><td>—</td><td>Agendamento avaliado.</td><td>UNIQUE; só após status Concluído.</td></tr>
+        <tr><td><code>nota</code></td><td>INT</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Nota do atendimento.</td><td>CHECK entre 1 e 5.</td></tr>
+        <tr><td><code>comentario</code></td><td>VARCHAR(500)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Comentário do cliente.</td><td>—</td></tr>
+        <tr><td><code>data_avaliacao</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>Data/hora atual</td><td>Data e hora da avaliação.</td><td>Posterior ao fim do agendamento.</td></tr>
       </tbody>
     </table></div>
     <p class="indices"><strong>Índices:</strong> PK id_avaliacao; índice único em id_agendamento.</p>
@@ -577,15 +581,15 @@ politica_reserva_versao + politica_aceita_em + criado_em + expira_em +
     <div class="reading"><b class="l">Leitura</b><p>Representa a identidade individual que opera o sistema e atribui autoria aos eventos auditáveis. Não é a entidade PROFISSIONAL: pode haver usuário administrativo sem atendimento, e a conta não deve guardar senha, hash de senha, token ou segredo de autenticação. Processos automáticos usam uma identidade técnica própria, também revogável e rastreável.</p></div>
     <div class="note">Cardinalidade mínima e máxima: USUARIO_SISTEMA (0,n) LOG_AUDITORIA · cada LOG_AUDITORIA (1,1) USUARIO_SISTEMA. A conta técnica cobre eventos automáticos sem tornar o autor opcional.</div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead>
+      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead>
       <tbody>
-        <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador do usuário/ator.</td><td>Não reutilizar após desativação.</td></tr>
-        <tr><td><code>nome_exibicao</code></td><td>VARCHAR(100)</td><td><span class="yes">Sim</span></td><td>Nome ou identificação da conta técnica.</td><td>Evitar incluir dados pessoais desnecessários.</td></tr>
-        <tr><td><code>identificador_login</code></td><td>VARCHAR(150)</td><td><span class="yes">Sim</span></td><td>Identificador único de login ou principal de serviço.</td><td>UNIQUE; não armazenar credencial.</td></tr>
-        <tr><td><code>perfil</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Administrador, Atendimento ou Profissional.</td><td>Autorizações devem seguir menor privilégio.</td></tr>
-        <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Indica se a identidade pode acessar o sistema.</td><td>Desativar, sem apagar autoria histórica.</td></tr>
-        <tr><td><code>data_criacao</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Data e hora da criação da conta.</td><td>Preenchida pelo sistema.</td></tr>
-        <tr><td><code>data_desativacao</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Data e hora de revogação do acesso.</td><td>Obrigatória quando ativo = falso, conforme CHECK/regra transacional.</td></tr>
+        <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador do usuário/ator.</td><td>Não reutilizar após desativação.</td></tr>
+        <tr><td><code>nome_exibicao</code></td><td>VARCHAR(100)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Nome ou identificação da conta técnica.</td><td>Evitar incluir dados pessoais desnecessários.</td></tr>
+        <tr><td><code>identificador_login</code></td><td>VARCHAR(150)</td><td><span class="yes">Sim</span></td><td>Sim</td><td>—</td><td>Identificador único de login ou principal de serviço.</td><td>UNIQUE; não armazenar credencial.</td></tr>
+        <tr><td><code>perfil</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>—</td><td>Administrador, Atendimento ou Profissional.</td><td>Autorizações devem seguir menor privilégio.</td></tr>
+        <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Não</td><td>Verdadeiro</td><td>Indica se a identidade pode acessar o sistema.</td><td>Desativar, sem apagar autoria histórica.</td></tr>
+        <tr><td><code>data_criacao</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>Data/hora atual</td><td>Data e hora da criação da conta.</td><td>Preenchida pelo sistema.</td></tr>
+        <tr><td><code>data_desativacao</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Data e hora de revogação do acesso.</td><td>Obrigatória quando ativo = falso, conforme CHECK/regra transacional.</td></tr>
       </tbody>
     </table></div>
     <p class="indices"><strong>Índices:</strong> PK id_usuario; índice único em identificador_login; índice em ativo.</p>
@@ -601,21 +605,21 @@ data_expurgo_prevista</pre>
     <div class="reading"><b class="l">Leitura</b><p>Trilha de auditoria da aplicação para atribuir ações a uma identidade e apoiar investigação e prestação de contas. O registro é append-only para perfis comuns; acesso ao log é restrito, toda consulta administrativa relevante é auditável e a integridade deve ser protegida. Usar o mínimo de metadados necessário.</p></div>
     <div class="note red">Não gravar senhas, tokens, conteúdo de formulários, comentários completos, dados de cartão ou snapshots integrais antes/depois. O prazo de expurgo deve seguir a política aprovada e pode ser suspenso por retenção legal ou investigação documentada.</div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead>
+      <thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead>
       <tbody>
-        <tr><td><code>id_log</code></td><td>BIGINT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador do evento de auditoria.</td><td>Sequencial, sem significado pessoal.</td></tr>
-        <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Identidade responsável, inclusive conta técnica.</td><td>FK para USUARIO_SISTEMA; preservada após desativação.</td></tr>
-        <tr><td><code>data_hora</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Instante do evento, preferencialmente armazenado em UTC.</td><td>Gerado pelo servidor, não pelo navegador.</td></tr>
-        <tr><td><code>acao</code></td><td>VARCHAR(40)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>LOGIN, LOGIN_FALHA, CONSULTA, DML, DDL, ALTERACAO_PERMISSAO, EXPORTACAO ou ESTORNO.</td><td>Domínio controlado; captar operações privilegiadas e acesso relevante a dados pessoais sem guardar conteúdo livre.</td></tr>
-        <tr><td><code>componente</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>APLICACAO ou SGBD.</td><td>Permite distinguir eventos de negócio dos eventos de auditoria nativa do banco.</td></tr>
-        <tr><td><code>recurso</code></td><td>VARCHAR(60)</td><td><span class="yes">Sim</span></td><td>Área/tipo de recurso acessado.</td><td>Ex.: CLIENTE, AGENDAMENTO, PAGAMENTO ou PERMISSAO.</td></tr>
-        <tr><td><code>resultado</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>SUCESSO ou FALHA.</td><td>Não incluir mensagem com dados pessoais ou credenciais.</td></tr>
-        <tr><td><code>identificador_registro</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Chave interna do registro afetado, quando necessária.</td><td>Não copiar valores dos atributos do registro.</td></tr>
-        <tr><td><code>origem</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Canal ou origem técnica; IP somente se necessário.</td><td>Tratar IP/identificadores de dispositivo como potencial dado pessoal.</td></tr>
-        <tr><td><code>principal_sgbd</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Conta/role do banco associada ao evento nativo.</td><td>Não guardar credencial; mapear contas técnicas a responsáveis.</td></tr>
-        <tr><td><code>id_sessao_sgbd</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Identificador de conexão/sessão, quando fornecido pelo SGBD.</td><td>Metadado técnico não secreto; acesso e retenção restritos.</td></tr>
-        <tr><td><code>id_correlacao</code></td><td>VARCHAR(64)</td><td><span class="no">Não</span></td><td>Identificador para relacionar eventos de uma operação.</td><td>Não usar token de sessão ou credencial.</td></tr>
-        <tr><td><code>data_expurgo_prevista</code></td><td>DATE</td><td><span class="yes">Sim</span></td><td>Data prevista para eliminação/anonimização do log.</td><td>Calculada segundo política de retenção aprovada; registrar exceção de retenção fora desta tabela.</td></tr>
+        <tr><td><code>id_log</code></td><td>BIGINT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador do evento de auditoria.</td><td>Sequencial, sem significado pessoal.</td></tr>
+        <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Identidade responsável, inclusive conta técnica.</td><td>FK para USUARIO_SISTEMA; preservada após desativação.</td></tr>
+        <tr><td><code>data_hora</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>Data/hora atual</td><td>Instante do evento, preferencialmente armazenado em UTC.</td><td>Gerado pelo servidor, não pelo navegador.</td></tr>
+        <tr><td><code>acao</code></td><td>VARCHAR(40)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>—</td><td>LOGIN, LOGIN_FALHA, CONSULTA, DML, DDL, ALTERACAO_PERMISSAO, EXPORTACAO ou ESTORNO.</td><td>Domínio controlado; captar operações privilegiadas e acesso relevante a dados pessoais sem guardar conteúdo livre.</td></tr>
+        <tr><td><code>componente</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>—</td><td>APLICACAO ou SGBD.</td><td>Permite distinguir eventos de negócio dos eventos de auditoria nativa do banco.</td></tr>
+        <tr><td><code>recurso</code></td><td>VARCHAR(60)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Área/tipo de recurso acessado.</td><td>Ex.: CLIENTE, AGENDAMENTO, PAGAMENTO ou PERMISSAO.</td></tr>
+        <tr><td><code>resultado</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>—</td><td>SUCESSO ou FALHA.</td><td>Não incluir mensagem com dados pessoais ou credenciais.</td></tr>
+        <tr><td><code>identificador_registro</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Chave interna do registro afetado, quando necessária.</td><td>Não copiar valores dos atributos do registro.</td></tr>
+        <tr><td><code>origem</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Canal ou origem técnica; IP somente se necessário.</td><td>Tratar IP/identificadores de dispositivo como potencial dado pessoal.</td></tr>
+        <tr><td><code>principal_sgbd</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Conta/role do banco associada ao evento nativo.</td><td>Não guardar credencial; mapear contas técnicas a responsáveis.</td></tr>
+        <tr><td><code>id_sessao_sgbd</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Identificador de conexão/sessão, quando fornecido pelo SGBD.</td><td>Metadado técnico não secreto; acesso e retenção restritos.</td></tr>
+        <tr><td><code>id_correlacao</code></td><td>VARCHAR(64)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Identificador para relacionar eventos de uma operação.</td><td>Não usar token de sessão ou credencial.</td></tr>
+        <tr><td><code>data_expurgo_prevista</code></td><td>DATE</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Data prevista para eliminação/anonimização do log.</td><td>Calculada segundo política de retenção aprovada; registrar exceção de retenção fora desta tabela.</td></tr>
       </tbody>
     </table></div>
     <p class="indices"><strong>Índices:</strong> PK id_log; índices em (componente, data_hora), (id_usuario, data_hora), (principal_sgbd, data_hora), (recurso, data_hora) e data_expurgo_prevista; acesso administrativo restrito e auditado. Logs nativos do SGBD devem ser enviados a armazenamento protegido com política própria de integridade, acesso e retenção.</p>
@@ -628,16 +632,16 @@ data_expurgo_prevista</pre>
 unidade_medida + (sku) + (descricao) + (preco_venda) +
 ativo + (estoque_minimo)</pre>
     <div class="reading"><b class="l">Leitura</b><p>Catálogo de produtos de revenda e insumos acompanhados pela barbearia. O saldo não é editado diretamente: deriva das entradas, saídas e ajustes em <code>MOVIMENTO_ESTOQUE</code>. Preço e custo praticados ficam congelados nos itens de venda/compra.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_produto</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador interno.</td><td>—</td></tr>
-      <tr><td><code>nome</code></td><td>VARCHAR(120)</td><td><span class="yes">Sim</span></td><td>Nome comercial ou descrição do insumo.</td><td>—</td></tr>
-      <tr><td><code>tipo_produto</code></td><td>VARCHAR(15)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Revenda, Insumo ou Ambos.</td><td>Define se pode entrar em venda, consumo interno ou ambos.</td></tr>
-      <tr><td><code>unidade_medida</code></td><td>VARCHAR(15)</td><td><span class="yes">Sim</span></td><td>Ex.: unidade, ml, g ou kg.</td><td>Unidade estável; conversões precisam de regra explícita.</td></tr>
-      <tr><td><code>sku</code></td><td>VARCHAR(50)</td><td><span class="no">Não</span></td><td>Código interno ou código de barras.</td><td>Único quando informado.</td></tr>
-      <tr><td><code>descricao</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Detalhes relevantes do item.</td><td>Evitar dados pessoais.</td></tr>
-      <tr><td><code>preco_venda</code></td><td>DECIMAL(10,2)</td><td><span class="no">Não</span></td><td>Preço de referência ao cliente quando for produto de revenda.</td><td>Obrigatório para Revenda/Ambos; não necessário para insumo exclusivo.</td></tr>
-      <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Indica se pode ser comprado/vendido.</td><td>Desativar sem apagar histórico.</td></tr>
-      <tr><td><code>estoque_minimo</code></td><td>DECIMAL(10,3)</td><td><span class="no">Não</span></td><td>Limite para alerta de reposição.</td><td>Não negativo; na unidade cadastrada.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_produto</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador interno.</td><td>—</td></tr>
+      <tr><td><code>nome</code></td><td>VARCHAR(120)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Nome comercial ou descrição do insumo.</td><td>—</td></tr>
+      <tr><td><code>tipo_produto</code></td><td>VARCHAR(15)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>—</td><td>Revenda, Insumo ou Ambos.</td><td>Define se pode entrar em venda, consumo interno ou ambos.</td></tr>
+      <tr><td><code>unidade_medida</code></td><td>VARCHAR(15)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Ex.: unidade, ml, g ou kg.</td><td>Unidade estável; conversões precisam de regra explícita.</td></tr>
+      <tr><td><code>sku</code></td><td>VARCHAR(50)</td><td><span class="no">Não</span></td><td>Sim</td><td>—</td><td>Código interno ou código de barras.</td><td>Único quando informado.</td></tr>
+      <tr><td><code>descricao</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Detalhes relevantes do item.</td><td>Evitar dados pessoais.</td></tr>
+      <tr><td><code>preco_venda</code></td><td>DECIMAL(10,2)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Preço de referência ao cliente quando for produto de revenda.</td><td>Obrigatório para Revenda/Ambos; não necessário para insumo exclusivo.</td></tr>
+      <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Não</td><td>Verdadeiro</td><td>Indica se pode ser comprado/vendido.</td><td>Desativar sem apagar histórico.</td></tr>
+      <tr><td><code>estoque_minimo</code></td><td>DECIMAL(10,3)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Limite para alerta de reposição.</td><td>Não negativo; na unidade cadastrada.</td></tr>
     </tbody></table></div>
     <p class="indices"><strong>Índices:</strong> PK id_produto; SKU único opcional; índice em ativo/nome.</p>
   </article>
@@ -648,13 +652,13 @@ ativo + (estoque_minimo)</pre>
     <pre class="notation">FORNECEDOR = @id_fornecedor + nome_razao_social +
 (documento_fiscal) + (telefone) + (email) + ativo</pre>
     <div class="reading"><b class="l">Leitura</b><p>Cadastro de fornecedores para compras, recebimento de mercadorias e contas a pagar. Solicitar e restringir documento fiscal e contatos ao necessário para contratação, escrituração e cobrança; acesso a esses dados é administrativo.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_fornecedor</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador interno.</td><td>—</td></tr>
-      <tr><td><code>nome_razao_social</code></td><td>VARCHAR(150)</td><td><span class="yes">Sim</span></td><td>Nome empresarial ou nome do fornecedor.</td><td>—</td></tr>
-      <tr><td><code>documento_fiscal</code></td><td>VARCHAR(20)</td><td><span class="no">Não</span></td><td>CNPJ/CPF se necessário à operação fiscal.</td><td>Validação e acesso restrito; não coletar sem necessidade.</td></tr>
-      <tr><td><code>telefone</code></td><td>VARCHAR(20)</td><td><span class="no">Não</span></td><td>Contato comercial.</td><td>—</td></tr>
-      <tr><td><code>email</code></td><td>VARCHAR(150)</td><td><span class="no">Não</span></td><td>E-mail de pedidos/documentos.</td><td>Formato validado se informado.</td></tr>
-      <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Disponibilidade para novas compras.</td><td>Desativar sem eliminar títulos e compras anteriores.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_fornecedor</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador interno.</td><td>—</td></tr>
+      <tr><td><code>nome_razao_social</code></td><td>VARCHAR(150)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Nome empresarial ou nome do fornecedor.</td><td>—</td></tr>
+      <tr><td><code>documento_fiscal</code></td><td>VARCHAR(20)</td><td><span class="no">Não</span></td><td>Sim</td><td>—</td><td>CNPJ/CPF se necessário à operação fiscal.</td><td>Validação e acesso restrito; não coletar sem necessidade.</td></tr>
+      <tr><td><code>telefone</code></td><td>VARCHAR(20)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Contato comercial.</td><td>—</td></tr>
+      <tr><td><code>email</code></td><td>VARCHAR(150)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>E-mail de pedidos/documentos.</td><td>Formato validado se informado.</td></tr>
+      <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Não</td><td>Verdadeiro</td><td>Disponibilidade para novas compras.</td><td>Desativar sem eliminar títulos e compras anteriores.</td></tr>
     </tbody></table></div>
   </article>
 
@@ -665,15 +669,15 @@ ativo + (estoque_minimo)</pre>
 data_pedido + [Rascunho | Pedida | Recebida | Cancelada] +
 (data_recebimento) + valor_total + (observacao)</pre>
     <div class="reading"><b class="l">Leitura</b><p>Registra aquisição de produtos/insumos de um fornecedor e quem a lançou. As linhas ficam em <code>ITEM_COMPRA</code>. Pedido não altera estoque; somente o recebimento conferido gera entradas de estoque. Pagamento pode ser à vista ou gerar parcelas em <code>CONTA_PAGAR</code>.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_compra</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador da compra.</td><td>—</td></tr>
-      <tr><td><code>id_fornecedor</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Fornecedor da compra.</td><td>Fornecedor deve estar ativo ao fazer novo pedido.</td></tr>
-      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Usuário que registrou.</td><td>Preservar autoria.</td></tr>
-      <tr><td><code>data_pedido</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Data/hora do pedido.</td><td>Gerada pelo sistema.</td></tr>
-      <tr><td><code>status</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Rascunho, Pedida, Recebida ou Cancelada.</td><td>Recebimento exige itens conferidos e documento quando fornecido.</td></tr>
-      <tr><td><code>data_recebimento</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Data/hora da conferência.</td><td>Obrigatória no status Recebida.</td></tr>
-      <tr><td><code>valor_total</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Soma de quantidades × custo unitário dos itens.</td><td>Recalculado na transação; não aceitar valor divergente das linhas.</td></tr>
-      <tr><td><code>observacao</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Observação operacional.</td><td>—</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_compra</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador da compra.</td><td>—</td></tr>
+      <tr><td><code>id_fornecedor</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Fornecedor da compra.</td><td>Fornecedor deve estar ativo ao fazer novo pedido.</td></tr>
+      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Usuário que registrou.</td><td>Preservar autoria.</td></tr>
+      <tr><td><code>data_pedido</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>Data/hora atual</td><td>Data/hora do pedido.</td><td>Gerada pelo sistema.</td></tr>
+      <tr><td><code>status</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>Rascunho</td><td>Rascunho, Pedida, Recebida ou Cancelada.</td><td>Recebimento exige itens conferidos e documento quando fornecido.</td></tr>
+      <tr><td><code>data_recebimento</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Data/hora da conferência.</td><td>Obrigatória no status Recebida.</td></tr>
+      <tr><td><code>valor_total</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>0</td><td>Soma de quantidades × custo unitário dos itens.</td><td>Recalculado na transação; não aceitar valor divergente das linhas.</td></tr>
+      <tr><td><code>observacao</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Observação operacional.</td><td>—</td></tr>
     </tbody></table></div>
   </article>
 
@@ -683,11 +687,11 @@ data_pedido + [Rascunho | Pedida | Recebida | Cancelada] +
     <pre class="notation">ITEM_COMPRA = @(id_compra + id_produto) +
 quantidade + custo_unitario</pre>
     <div class="reading"><b class="l">Leitura</b><p>Resolve a relação N:M entre compra e produto e preserva quantidade e custo da data da compra. Produto comprado pode não ser um item de revenda.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_compra</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>Compra pai.</td><td>Uma compra recebida requer ao menos uma linha.</td></tr>
-      <tr><td><code>id_produto</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>Produto/insumo comprado.</td><td>Produto não repetido na mesma compra; usar quantidade agregada.</td></tr>
-      <tr><td><code>quantidade</code></td><td>DECIMAL(10,3)</td><td><span class="yes">Sim</span></td><td>Quantidade recebida ou pedida.</td><td>Maior que zero, na unidade cadastrada em PRODUTO.</td></tr>
-      <tr><td><code>custo_unitario</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Custo unitário na compra.</td><td>Não negativo; histórico imutável após recebimento.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_compra</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>PK composta (id_compra + id_produto)</td><td>—</td><td>Compra pai.</td><td>Uma compra recebida requer ao menos uma linha.</td></tr>
+      <tr><td><code>id_produto</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>PK composta (id_compra + id_produto)</td><td>—</td><td>Produto/insumo comprado.</td><td>Produto não repetido na mesma compra; usar quantidade agregada.</td></tr>
+      <tr><td><code>quantidade</code></td><td>DECIMAL(10,3)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Quantidade recebida ou pedida.</td><td>Maior que zero, na unidade cadastrada em PRODUTO.</td></tr>
+      <tr><td><code>custo_unitario</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Custo unitário na compra.</td><td>Não negativo; histórico imutável após recebimento.</td></tr>
     </tbody></table></div>
   </article>
 
@@ -698,14 +702,14 @@ quantidade + custo_unitario</pre>
 data_hora + [Aberta | Concluida | Cancelada] +
 valor_total + [Pix | Credito | Debito | Dinheiro]</pre>
     <div class="reading"><b class="l">Leitura</b><p>Venda de balcão com operador obrigatório e cliente opcional. Itens, quantidades, preço praticado e descontos ficam em <code>ITEM_VENDA</code>. A conclusão exige pagamento recebido e baixa de estoque atômica; cancelamento após conclusão exige estorno financeiro e reposição rastreável, não exclusão.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_venda</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador da venda.</td><td>—</td></tr>
-      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Operador responsável.</td><td>—</td></tr>
-      <tr><td><code>id_cliente</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Cliente, se identificado e necessário.</td><td>Não obrigar cadastro para venda de balcão.</td></tr>
-      <tr><td><code>data_hora</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Data/hora de abertura.</td><td>Gerada pelo sistema.</td></tr>
-      <tr><td><code>status</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Aberta, Concluida ou Cancelada.</td><td>Concluir apenas após pagamento; estorno deixa trilha.</td></tr>
-      <tr><td><code>valor_total</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Total da venda.</td><td>Calculado pelas linhas e descontos autorizados.</td></tr>
-      <tr><td><code>forma_pagamento</code></td><td>VARCHAR(30)</td><td><span class="no">Não</span><span class="no">(escolha)</span></td><td>Pix, crédito, débito ou dinheiro.</td><td>Obrigatória ao concluir; nunca armazenar dados de cartão.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_venda</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador da venda.</td><td>—</td></tr>
+      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Operador responsável.</td><td>—</td></tr>
+      <tr><td><code>id_cliente</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Cliente, se identificado e necessário.</td><td>Não obrigar cadastro para venda de balcão.</td></tr>
+      <tr><td><code>data_hora</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>Data/hora atual</td><td>Data/hora de abertura.</td><td>Gerada pelo sistema.</td></tr>
+      <tr><td><code>status</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>Aberta</td><td>Aberta, Concluida ou Cancelada.</td><td>Concluir apenas após pagamento; estorno deixa trilha.</td></tr>
+      <tr><td><code>valor_total</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>0</td><td>Total da venda.</td><td>Calculado pelas linhas e descontos autorizados.</td></tr>
+      <tr><td><code>forma_pagamento</code></td><td>VARCHAR(30)</td><td><span class="no">Não</span><span class="no">(escolha)</span></td><td>Não</td><td>—</td><td>Pix, crédito, débito ou dinheiro.</td><td>Obrigatória ao concluir; nunca armazenar dados de cartão.</td></tr>
     </tbody></table></div>
   </article>
 
@@ -715,12 +719,12 @@ valor_total + [Pix | Credito | Debito | Dinheiro]</pre>
     <pre class="notation">ITEM_VENDA = @(id_venda + id_produto) +
 quantidade + preco_unitario + (desconto_unitario)</pre>
     <div class="reading"><b class="l">Leitura</b><p>Resolve a relação N:M entre venda e produto; mantém preço praticado, quantidade e eventual desconto para apuração da receita e da saída de estoque.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_venda</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>Venda pai.</td><td>Uma venda concluída tem ao menos um item.</td></tr>
-      <tr><td><code>id_produto</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>Produto vendido.</td><td>PK composta impede duplicidade; consolidar quantidade.</td></tr>
-      <tr><td><code>quantidade</code></td><td>DECIMAL(10,3)</td><td><span class="yes">Sim</span></td><td>Quantidade vendida.</td><td>Maior que zero e não superior ao saldo disponível.</td></tr>
-      <tr><td><code>preco_unitario</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Preço unitário no momento da venda.</td><td>Snapshot histórico.</td></tr>
-      <tr><td><code>desconto_unitario</code></td><td>DECIMAL(10,2)</td><td><span class="no">Não</span></td><td>Desconto unitário autorizado.</td><td>Entre zero e preço unitário; auditar operador.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_venda</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>PK composta (id_venda + id_produto)</td><td>—</td><td>Venda pai.</td><td>Uma venda concluída tem ao menos um item.</td></tr>
+      <tr><td><code>id_produto</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>PK composta (id_venda + id_produto)</td><td>—</td><td>Produto vendido.</td><td>PK composta impede duplicidade; consolidar quantidade.</td></tr>
+      <tr><td><code>quantidade</code></td><td>DECIMAL(10,3)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Quantidade vendida.</td><td>Maior que zero e não superior ao saldo disponível.</td></tr>
+      <tr><td><code>preco_unitario</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Preço unitário no momento da venda.</td><td>Snapshot histórico.</td></tr>
+      <tr><td><code>desconto_unitario</code></td><td>DECIMAL(10,2)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Desconto unitário autorizado.</td><td>Entre zero e preço unitário; auditar operador.</td></tr>
     </tbody></table></div>
   </article>
 
@@ -729,19 +733,20 @@ quantidade + preco_unitario + (desconto_unitario)</pre>
     <div class="entity-head"><span class="n">5.16</span><h3>CONTA_PAGAR</h3></div>
     <pre class="notation">CONTA_PAGAR = @id_conta + (id_fornecedor) + (id_compra) +
 id_usuario + descricao + categoria + valor + data_vencimento +
-[Aberta | Paga | Atrasada | Cancelada] + (data_baixa)</pre>
+[Aberta | Paga | Atrasada | Cancelada] + (data_baixa) + (forma_baixa)</pre>
     <div class="reading"><b class="l">Leitura</b><p>Controla obrigações por vencimento, inclusive despesas recorrentes sem compra de estoque. Uma compra parcelada gera uma conta por parcela; baixa efetiva gera lançamento em caixa. Alterações e cancelamentos preservam autoria e motivo.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_conta</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador do título.</td><td>—</td></tr>
-      <tr><td><code>id_fornecedor</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Credor quando identificado.</td><td>—</td></tr>
-      <tr><td><code>id_compra</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Compra de origem, se houver.</td><td>Compra pode originar várias parcelas.</td></tr>
-      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Usuário que lançou/baixou.</td><td>Auditar cada alteração de status.</td></tr>
-      <tr><td><code>descricao</code></td><td>VARCHAR(150)</td><td><span class="yes">Sim</span></td><td>Descrição da obrigação.</td><td>—</td></tr>
-      <tr><td><code>categoria</code></td><td>VARCHAR(40)</td><td><span class="yes">Sim</span></td><td>Ex.: estoque, aluguel, energia, serviço.</td><td>Domínio controlado para relatórios.</td></tr>
-      <tr><td><code>valor</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Valor da parcela/obrigação.</td><td>Maior que zero.</td></tr>
-      <tr><td><code>data_vencimento</code></td><td>DATE</td><td><span class="yes">Sim</span></td><td>Vencimento acordado.</td><td>Alertar títulos vencidos.</td></tr>
-      <tr><td><code>status</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Aberta, Paga, Atrasada ou Cancelada.</td><td>Atrasada pode ser calculada por vencimento; baixa não apaga valor devido.</td></tr>
-      <tr><td><code>data_baixa</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Data/hora do pagamento.</td><td>Obrigatória no status Paga.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_conta</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador do título.</td><td>—</td></tr>
+      <tr><td><code>id_fornecedor</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Credor quando identificado.</td><td>—</td></tr>
+      <tr><td><code>id_compra</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Compra de origem, se houver.</td><td>Compra pode originar várias parcelas.</td></tr>
+      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Usuário que lançou/baixou.</td><td>Auditar cada alteração de status.</td></tr>
+      <tr><td><code>descricao</code></td><td>VARCHAR(150)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Descrição da obrigação.</td><td>—</td></tr>
+      <tr><td><code>categoria</code></td><td>VARCHAR(40)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Ex.: estoque, aluguel, energia, serviço.</td><td>Domínio controlado para relatórios.</td></tr>
+      <tr><td><code>valor</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Valor da parcela/obrigação.</td><td>Maior que zero.</td></tr>
+      <tr><td><code>data_vencimento</code></td><td>DATE</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Vencimento acordado.</td><td>Alertar títulos vencidos.</td></tr>
+      <tr><td><code>status</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>Aberta</td><td>Aberta, Paga, Atrasada ou Cancelada.</td><td>Atrasada pode ser calculada por vencimento; baixa não apaga valor devido.</td></tr>
+      <tr><td><code>data_baixa</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Data/hora do pagamento.</td><td>Obrigatória no status Paga.</td></tr>
+        <tr><td><code>forma_baixa</code></td><td>VARCHAR(20)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Forma usada para pagar a conta.</td><td>Dinheiro, Pix, Credito ou Debito; obrigatória no status Paga.</td></tr>
     </tbody></table></div>
   </article>
 
@@ -753,18 +758,18 @@ id_usuario + descricao + categoria + valor + data_vencimento +
 [Entrada | Saida | Estorno | Ajuste] + forma_pagamento +
 valor + data_hora + (motivo)</pre>
     <div class="reading"><b class="l">Leitura</b><p>Livro de movimentos financeiros efetivamente recebidos ou pagos, distinguindo agendamentos, vendas e contas. Cada recebimento/baixa aponta para exatamente uma origem; abertura e ajuste podem não ter origem financeira, mas exigem motivo e autorização. Correções são novos movimentos, nunca edição destrutiva.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_movimento</code></td><td>BIGINT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador do lançamento.</td><td>—</td></tr>
-      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Responsável pelo lançamento.</td><td>Identidade individual obrigatória.</td></tr>
-      <tr><td><code>id_pagamento</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Recebimento de agendamento.</td><td>Exclusivo com id_venda/id_conta em recebimento/desembolso.</td></tr>
-      <tr><td><code>id_venda</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Recebimento de venda.</td><td>Uma origem para cada recebimento.</td></tr>
-      <tr><td><code>id_conta</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Pagamento de obrigação.</td><td>Uma origem para cada baixa.</td></tr>
-      <tr><td><code>id_fechamento</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Fechamento que consolidou o movimento.</td><td>NULL enquanto caixa estiver aberto; imutável após fechamento.</td></tr>
-      <tr><td><code>tipo</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Entrada, Saida, Estorno ou Ajuste.</td><td>Convenção de sinal e estornos documentada; ajuste exige autorização.</td></tr>
-      <tr><td><code>forma_pagamento</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span></td><td>Dinheiro, Pix, Crédito, Débito ou Não_aplicavel.</td><td>Conferir separadamente dinheiro físico, banco e adquirente.</td></tr>
-      <tr><td><code>valor</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Valor absoluto do movimento.</td><td>Maior que zero; direção vem do tipo.</td></tr>
-      <tr><td><code>data_hora</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Data/hora efetiva.</td><td>Gerada pelo servidor.</td></tr>
-      <tr><td><code>motivo</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Motivo para ajuste/estorno.</td><td>Obrigatório em ajustes e estornos.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_movimento</code></td><td>BIGINT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador do lançamento.</td><td>—</td></tr>
+      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Responsável pelo lançamento.</td><td>Identidade individual obrigatória.</td></tr>
+      <tr><td><code>id_pagamento</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Sim</td><td>—</td><td>Recebimento de agendamento.</td><td>Exclusivo com id_venda/id_conta em recebimento/desembolso.</td></tr>
+      <tr><td><code>id_venda</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Composto (id_venda + tipo)</td><td>—</td><td>Recebimento de venda.</td><td>Uma origem para cada recebimento.</td></tr>
+      <tr><td><code>id_conta</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Composto (id_conta + tipo)</td><td>—</td><td>Pagamento de obrigação.</td><td>Uma origem para cada baixa.</td></tr>
+      <tr><td><code>id_fechamento</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Fechamento que consolidou o movimento.</td><td>NULL enquanto caixa estiver aberto; imutável após fechamento.</td></tr>
+      <tr><td><code>tipo</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Composto (id_conta + tipo; id_venda + tipo)</td><td>—</td><td>Entrada, Saida, Estorno ou Ajuste.</td><td>Convenção de sinal e estornos documentada; ajuste exige autorização.</td></tr>
+      <tr><td><code>forma_pagamento</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Dinheiro, Pix, Crédito, Débito ou Não_aplicavel.</td><td>Conferir separadamente dinheiro físico, banco e adquirente.</td></tr>
+      <tr><td><code>valor</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Valor absoluto do movimento.</td><td>Maior que zero; direção vem do tipo.</td></tr>
+      <tr><td><code>data_hora</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>Data/hora atual</td><td>Data/hora efetiva.</td><td>Gerada pelo servidor.</td></tr>
+      <tr><td><code>motivo</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Motivo para ajuste/estorno.</td><td>Obrigatório em ajustes e estornos.</td></tr>
     </tbody></table></div>
   </article>
 
@@ -772,15 +777,16 @@ valor + data_hora + (motivo)</pre>
   <article class="entity" id="fechamento" data-k="fechamento">
     <div class="entity-head"><span class="n">5.18</span><h3>FECHAMENTO_CAIXA</h3></div>
     <pre class="notation">FECHAMENTO_CAIXA = @id_fechamento + id_usuario +
-aberto_em + (fechado_em) + saldo_abertura + status</pre>
+aberto_em + (fechado_em) + saldo_abertura + status + (flag_aberto)</pre>
     <div class="reading"><b class="l">Leitura</b><p>Representa um turno/período de caixa. O esperado é calculado dos movimentos e comparado ao valor contado/conferido por forma em <code>FECHAMENTO_FORMA</code> (para dinheiro, incluir saldo de abertura; Pix/cartões são conciliados com extratos/relatórios). Fechamento é imutável; reabertura excepcional requer autorização e log.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_fechamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador do turno.</td><td>—</td></tr>
-      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Responsável pela abertura/fechamento.</td><td>Usuário habilitado.</td></tr>
-      <tr><td><code>aberto_em</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Início do período.</td><td>Um caixa aberto por unidade/turno, se houver mais de um.</td></tr>
-      <tr><td><code>fechado_em</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Encerramento.</td><td>NULL até fechamento.</td></tr>
-      <tr><td><code>saldo_abertura</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Fundo de troco inicial.</td><td>Separar numerário do faturamento.</td></tr>
-      <tr><td><code>status</code></td><td>VARCHAR(15)</td><td><span class="yes">Sim</span></td><td>Aberto ou Fechado.</td><td>Fechado não reeditável.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_fechamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador do turno.</td><td>—</td></tr>
+      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Responsável pela abertura/fechamento.</td><td>Usuário habilitado.</td></tr>
+      <tr><td><code>aberto_em</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>Data/hora atual</td><td>Início do período.</td><td>Um caixa aberto por unidade/turno, se houver mais de um.</td></tr>
+      <tr><td><code>fechado_em</code></td><td>DATETIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Encerramento.</td><td>NULL até fechamento.</td></tr>
+      <tr><td><code>saldo_abertura</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>0</td><td>Fundo de troco inicial.</td><td>Separar numerário do faturamento.</td></tr>
+      <tr><td><code>status</code></td><td>VARCHAR(15)</td><td><span class="yes">Sim</span></td><td>Não</td><td>Aberto</td><td>Aberto ou Fechado.</td><td>Fechado não reeditável.</td></tr>
+        <tr><td><code>flag_aberto</code></td><td>TINYINT</td><td><span class="no">Não</span></td><td>Sim</td><td>Calculado</td><td>Vale 1 quando o caixa está aberto e nulo quando fechado.</td><td>Coluna gerada; o UNIQUE garante no máximo um caixa aberto por vez (RN14).</td></tr>
     </tbody></table></div>
   </article>
 
@@ -790,12 +796,12 @@ aberto_em + (fechado_em) + saldo_abertura + status</pre>
     <pre class="notation">FECHAMENTO_FORMA = @(id_fechamento + forma_pagamento) +
 valor_esperado + valor_conferido + diferenca</pre>
     <div class="reading"><b class="l">Leitura</b><p>Detalhe repetitivo do fechamento, com uma linha por meio de pagamento, incluindo os meios sem movimento. Permite distinguir falta/sobra de dinheiro de divergência de liquidação de cartão ou Pix.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_fechamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>Fechamento pai.</td><td>Um detalhe por forma em cada fechamento.</td></tr>
-      <tr><td><code>forma_pagamento</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Dinheiro, Pix, Crédito ou Débito.</td><td>Domínio controlado.</td></tr>
-      <tr><td><code>valor_esperado</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Valor calculado dos movimentos no período.</td><td>Derivado do razão; inclui fundo de troco de abertura em dinheiro.</td></tr>
-      <tr><td><code>valor_conferido</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Contagem física ou conciliação no extrato/relatório.</td><td>Dinheiro contado; demais formas conciliadas com o provedor/banco.</td></tr>
-      <tr><td><code>diferenca</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Valor conferido menos valor esperado.</td><td>Calculado; diferença exige motivo antes de fechar o caixa.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_fechamento</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span><span class="badge fk">FK</span></td><td>PK composta (id_fechamento + forma_pagamento)</td><td>—</td><td>Fechamento pai.</td><td>Um detalhe por forma em cada fechamento.</td></tr>
+      <tr><td><code>forma_pagamento</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>PK composta (id_fechamento + forma_pagamento)</td><td>—</td><td>Dinheiro, Pix, Crédito ou Débito.</td><td>Domínio controlado.</td></tr>
+      <tr><td><code>valor_esperado</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Valor calculado dos movimentos no período.</td><td>Derivado do razão; inclui fundo de troco de abertura em dinheiro.</td></tr>
+      <tr><td><code>valor_conferido</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Contagem física ou conciliação no extrato/relatório.</td><td>Dinheiro contado; demais formas conciliadas com o provedor/banco.</td></tr>
+      <tr><td><code>diferenca</code></td><td>DECIMAL(10,2)</td><td><span class="yes">Sim</span></td><td>Não</td><td>Calculado</td><td>Valor conferido menos valor esperado.</td><td>Calculado; diferença exige motivo antes de fechar o caixa.</td></tr>
     </tbody></table></div>
   </article>
 
@@ -805,20 +811,21 @@ valor_esperado + valor_conferido + diferenca</pre>
     <pre class="notation">MOVIMENTO_ESTOQUE = @id_mov_estoque + id_produto + id_usuario +
 (id_compra, id_produto_compra) + (id_venda, id_produto_venda) +
 (id_registro_higienizacao) +
-[Entrada | Saida | Ajuste] + quantidade + data_hora + motivo</pre>
+[Entrada | Saida | Ajuste] + (direcao_ajuste) + quantidade + data_hora + motivo</pre>
     <div class="reading"><b class="l">Leitura</b><p>Razão imutável de estoque por produto. Compra recebida gera entrada; venda concluída gera saída; inventário/avaria gera ajuste documentado. Para movimentos de origem, FK composta aponta ao item correspondente; ajuste não aponta a item, mas exige motivo, quantidade e autor. Não armazenar saldo editável como fonte única.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_mov_estoque</code></td><td>BIGINT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador do movimento.</td><td>—</td></tr>
-      <tr><td><code>id_produto</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Produto/insumo movimentado.</td><td>—</td></tr>
-      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Responsável pela movimentação.</td><td>Conta técnica somente para integrações identificadas.</td></tr>
-      <tr><td><code>id_compra, id_produto_compra</code></td><td>INT, INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Item de compra que originou entrada.</td><td>Com id_venda nulos para entrada de compra.</td></tr>
-      <tr><td><code>id_venda, id_produto_venda</code></td><td>INT, INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Item de venda que originou saída.</td><td>Com id_compra nulos para saída de venda.</td></tr>
-      <tr><td><code>id_registro_higienizacao</code></td><td>BIGINT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Procedimento que consumiu insumo.</td><td>Opcional; com outras origens nulas para baixa por uso operacional.</td></tr>
-      <tr><td><code>tipo</code></td><td>VARCHAR(15)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Entrada, Saida ou Ajuste.</td><td>Uma origem de compra, venda, uso/higienização ou ajuste manual, compatível com o tipo.</td></tr>
-      <tr><td><code>quantidade</code></td><td>DECIMAL(10,3)</td><td><span class="yes">Sim</span></td><td>Quantidade em unidade do produto.</td><td>Maior que zero; direção deriva do tipo.</td></tr>
-      <tr><td><code>custo_unitario</code></td><td>DECIMAL(10,4)</td><td><span class="no">Não</span></td><td>Custo de valorização da entrada/saída.</td><td>Política FIFO ou custo médio ponderado deve ser escolhida e validada com contabilidade; ajuste justificado.</td></tr>
-      <tr><td><code>data_hora</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Momento efetivo.</td><td>Gerado pelo servidor.</td></tr>
-      <tr><td><code>motivo</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Motivo de ajuste/perda/devolução.</td><td>Obrigatório para tipo Ajuste.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_mov_estoque</code></td><td>BIGINT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador do movimento.</td><td>—</td></tr>
+      <tr><td><code>id_produto</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Produto/insumo movimentado.</td><td>—</td></tr>
+      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Responsável pela movimentação.</td><td>Conta técnica somente para integrações identificadas.</td></tr>
+      <tr><td><code>id_compra, id_produto_compra</code></td><td>INT, INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Sim</td><td>—</td><td>Item de compra que originou entrada.</td><td>Com id_venda nulos para entrada de compra.</td></tr>
+      <tr><td><code>id_venda, id_produto_venda</code></td><td>INT, INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Sim</td><td>—</td><td>Item de venda que originou saída.</td><td>Com id_compra nulos para saída de venda.</td></tr>
+      <tr><td><code>id_registro_higienizacao</code></td><td>BIGINT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Procedimento que consumiu insumo.</td><td>Opcional; com outras origens nulas para baixa por uso operacional.</td></tr>
+      <tr><td><code>tipo</code></td><td>VARCHAR(15)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>—</td><td>Entrada, Saida ou Ajuste.</td><td>Uma origem de compra, venda, uso/higienização ou ajuste manual, compatível com o tipo.</td></tr>
+        <tr><td><code>direcao_ajuste</code></td><td>VARCHAR(10)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Sentido do ajuste manual de estoque.</td><td>Entrada ou Saida; obrigatória quando tipo = Ajuste e nula nos demais tipos (RN13).</td></tr>
+      <tr><td><code>quantidade</code></td><td>DECIMAL(10,3)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Quantidade em unidade do produto.</td><td>Maior que zero; direção deriva do tipo.</td></tr>
+      <tr><td><code>custo_unitario</code></td><td>DECIMAL(10,4)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Custo de valorização da entrada/saída.</td><td>Política FIFO ou custo médio ponderado deve ser escolhida e validada com contabilidade; ajuste justificado.</td></tr>
+      <tr><td><code>data_hora</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>Data/hora atual</td><td>Momento efetivo.</td><td>Gerado pelo servidor.</td></tr>
+      <tr><td><code>motivo</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Motivo de ajuste/perda/devolução.</td><td>Obrigatório para tipo Ajuste.</td></tr>
     </tbody></table></div>
     <p class="indices"><strong>Índices:</strong> PK id_mov_estoque; índices em (id_produto, data_hora), id_compra, id_venda, id_registro_higienizacao; UNIQUE por item de compra/venda para impedir dupla movimentação.</p>
   </article>
@@ -831,18 +838,18 @@ valor_esperado + valor_conferido + diferenca</pre>
 tipo + numero + serie + (chave_acesso) + emitido_em +
 status + (localizador_arquivo)</pre>
     <div class="reading"><b class="l">Leitura</b><p>Referência ao documento fiscal emitido para prestação de serviço/agendamento, venda de produto ou recebido do fornecedor numa compra. Cada documento pertence a exatamente uma origem. O escopo simplifica para um documento por origem; se a emissão consolidar várias prestações/vendas, criar itens/associação de documentos antes de implementar. A tabela organiza identificação e estado, não calcula tributos nem substitui emissão oficial; guarda do XML/arquivo deve ocorrer em repositório protegido conforme obrigação fiscal.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_documento</code></td><td>BIGINT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador interno.</td><td>—</td></tr>
-      <tr><td><code>id_agendamento</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Prestação de serviço vinculada ao agendamento.</td><td>Exclusivo com id_venda/id_compra; quando aplicável pode haver mais de um documento autorizado.</td></tr>
-      <tr><td><code>id_venda</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Venda de produto documentada.</td><td>Exclusivo com id_agendamento/id_compra.</td></tr>
-      <tr><td><code>id_compra</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Compra com documento recebido.</td><td>Exclusivo com id_agendamento/id_venda; CHECK requer exatamente uma origem.</td></tr>
-      <tr><td><code>tipo</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span></td><td>Ex.: NFS-e, NFC-e, NF-e ou outro documento aplicável.</td><td>Confirmar enquadramento e nomenclatura com contador.</td></tr>
-      <tr><td><code>numero</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span></td><td>Número do documento.</td><td>Unique com série/tipo/emitente pertinente.</td></tr>
-      <tr><td><code>serie</code></td><td>VARCHAR(20)</td><td><span class="no">Não</span></td><td>Série do documento.</td><td>—</td></tr>
-      <tr><td><code>chave_acesso</code></td><td>VARCHAR(60)</td><td><span class="no">Não</span></td><td>Chave de validação, quando houver.</td><td>Restringir acesso e validar formato segundo o documento.</td></tr>
-      <tr><td><code>emitido_em</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Data/hora de emissão/recebimento.</td><td>—</td></tr>
-      <tr><td><code>status</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span></td><td>Autorizado, Pendente, Cancelado ou Recebido.</td><td>Atualizar a partir de retorno oficial quando integrado.</td></tr>
-      <tr><td><code>localizador_arquivo</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Referência ao arquivo fiscal seguro.</td><td>Não guardar URL pública ou arquivo sem controle de acesso.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_documento</code></td><td>BIGINT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador interno.</td><td>—</td></tr>
+      <tr><td><code>id_agendamento</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Prestação de serviço vinculada ao agendamento.</td><td>Exclusivo com id_venda/id_compra; quando aplicável pode haver mais de um documento autorizado.</td></tr>
+      <tr><td><code>id_venda</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Venda de produto documentada.</td><td>Exclusivo com id_agendamento/id_compra.</td></tr>
+      <tr><td><code>id_compra</code></td><td>INT</td><td><span class="no">Não</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Compra com documento recebido.</td><td>Exclusivo com id_agendamento/id_venda; CHECK requer exatamente uma origem.</td></tr>
+      <tr><td><code>tipo</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span></td><td>Composto (tipo + serie + numero)</td><td>—</td><td>Ex.: NFS-e, NFC-e, NF-e ou outro documento aplicável.</td><td>Confirmar enquadramento e nomenclatura com contador.</td></tr>
+      <tr><td><code>numero</code></td><td>VARCHAR(30)</td><td><span class="yes">Sim</span></td><td>Composto (tipo + serie + numero)</td><td>—</td><td>Número do documento.</td><td>Unique com série/tipo/emitente pertinente.</td></tr>
+      <tr><td><code>serie</code></td><td>VARCHAR(20)</td><td><span class="no">Não</span></td><td>Composto (tipo + serie + numero)</td><td>—</td><td>Série do documento.</td><td>—</td></tr>
+      <tr><td><code>chave_acesso</code></td><td>VARCHAR(60)</td><td><span class="no">Não</span></td><td>Sim</td><td>—</td><td>Chave de validação, quando houver.</td><td>Restringir acesso e validar formato segundo o documento.</td></tr>
+      <tr><td><code>emitido_em</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Data/hora de emissão/recebimento.</td><td>—</td></tr>
+      <tr><td><code>status</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Autorizado, Pendente, Cancelado ou Recebido.</td><td>Atualizar a partir de retorno oficial quando integrado.</td></tr>
+      <tr><td><code>localizador_arquivo</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Referência ao arquivo fiscal seguro.</td><td>Não guardar URL pública ou arquivo sem controle de acesso.</td></tr>
     </tbody></table></div>
   </article>
 
@@ -854,17 +861,17 @@ data_hora + item_area + etapa + metodo + (produto_lote) +
 (referencia_ciclo) +
 resultado + (observacao)</pre>
     <div class="reading"><b class="l">Leitura</b><p>Registro operacional de limpeza/desinfecção de superfícies e processamento de instrumentos reutilizáveis, identificando responsável, etapa, método e resultado. Para instrumentos que exijam esterilização: pré-limpar, preparar/embalar, processar conforme método e equipamento validados e guardar em área limpa protegida; reprovação impede o uso e exige reprocessamento. A equipe deve seguir instruções do fabricante e exigências da Vigilância Sanitária municipal/estadual aplicáveis; este dicionário não substitui POP, treinamento, licenciamento nem define ciclo/tempo universal. Materiais de uso único não são reprocessados.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_registro</code></td><td>BIGINT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador da ocorrência.</td><td>—</td></tr>
-      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Responsável identificado.</td><td>Não compartilhar autoria.</td></tr>
-      <tr><td><code>data_hora</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Momento do procedimento.</td><td>Gerado no registro, sem edição silenciosa.</td></tr>
-      <tr><td><code>item_area</code></td><td>VARCHAR(100)</td><td><span class="yes">Sim</span></td><td>Instrumento, cadeira ou superfície.</td><td>Identificação operacional suficiente, sem dados de cliente.</td></tr>
-      <tr><td><code>etapa</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span></td><td>Limpeza, Desinfeccao, Esterilizacao ou Descarte.</td><td>Compatível com material e protocolo local.</td></tr>
-      <tr><td><code>metodo</code></td><td>VARCHAR(120)</td><td><span class="yes">Sim</span></td><td>Procedimento aplicado.</td><td>Conforme POP, fabricante e autoridade sanitária.</td></tr>
-      <tr><td><code>produto_lote</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Produto/lote quando usado ou exigido pelo protocolo.</td><td>Conferir validade e instrução de uso.</td></tr>
-      <tr><td><code>referencia_ciclo</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Identificador do ciclo/equipamento quando aplicável.</td><td>Guardar evidência exigida pelo POP e norma local; não inventar parâmetros.</td></tr>
-      <tr><td><code>resultado</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span></td><td>Concluido, Reprovado ou Refeito.</td><td>Reprovado exige reprocessamento antes do uso.</td></tr>
-      <tr><td><code>observacao</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Observação técnica.</td><td>Registrar ocorrência sem identificar cliente atendido.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_registro</code></td><td>BIGINT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador da ocorrência.</td><td>—</td></tr>
+      <tr><td><code>id_usuario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge fk">FK</span></td><td>Não</td><td>—</td><td>Responsável identificado.</td><td>Não compartilhar autoria.</td></tr>
+      <tr><td><code>data_hora</code></td><td>DATETIME</td><td><span class="yes">Sim</span></td><td>Não</td><td>Data/hora atual</td><td>Momento do procedimento.</td><td>Gerado no registro, sem edição silenciosa.</td></tr>
+      <tr><td><code>item_area</code></td><td>VARCHAR(100)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Instrumento, cadeira ou superfície.</td><td>Identificação operacional suficiente, sem dados de cliente.</td></tr>
+      <tr><td><code>etapa</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Limpeza, Desinfeccao, Esterilizacao ou Descarte.</td><td>Compatível com material e protocolo local.</td></tr>
+      <tr><td><code>metodo</code></td><td>VARCHAR(120)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Procedimento aplicado.</td><td>Conforme POP, fabricante e autoridade sanitária.</td></tr>
+      <tr><td><code>produto_lote</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Produto/lote quando usado ou exigido pelo protocolo.</td><td>Conferir validade e instrução de uso.</td></tr>
+      <tr><td><code>referencia_ciclo</code></td><td>VARCHAR(100)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Identificador do ciclo/equipamento quando aplicável.</td><td>Guardar evidência exigida pelo POP e norma local; não inventar parâmetros.</td></tr>
+      <tr><td><code>resultado</code></td><td>VARCHAR(20)</td><td><span class="yes">Sim</span></td><td>Não</td><td>—</td><td>Concluido, Reprovado ou Refeito.</td><td>Reprovado exige reprocessamento antes do uso.</td></tr>
+      <tr><td><code>observacao</code></td><td>VARCHAR(255)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Observação técnica.</td><td>Registrar ocorrência sem identificar cliente atendido.</td></tr>
     </tbody></table></div>
   </article>
 
@@ -876,18 +883,18 @@ resultado + (observacao)</pre>
 (hora_abertura) + (hora_fechamento) + vigencia_inicio +
 (vigencia_fim) + (motivo) + ativo</pre>
     <div class="reading"><b class="l">Leitura</b><p>Armazena o expediente semanal e exceções pontuais, inclusive feriados abertos/fechados. Manter uma regra semanal por dia da semana, incluindo dias fechados; a exceção para uma data prevalece sobre a semanal. Cada agendamento guarda a regra efetiva que autorizou o horário para preservar a trilha quando o calendário mudar. Este calendário é da barbearia; disponibilidade, folgas e férias individuais dos profissionais devem ser validadas à parte.</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
-      <tr><td><code>id_regra_calendario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Identificador da regra.</td><td>—</td></tr>
-      <tr><td><code>tipo_regra</code></td><td>VARCHAR(15)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>SEMANAL ou EXCECAO.</td><td>Define se usa dia da semana ou data específica.</td></tr>
-      <tr><td><code>dia_semana</code></td><td>TINYINT</td><td><span class="no">Não</span></td><td>Dia semanal (1–7).</td><td>Obrigatório para SEMANAL; convenção 1=segunda e 7=domingo.</td></tr>
-      <tr><td><code>data_especifica</code></td><td>DATE</td><td><span class="no">Não</span></td><td>Data da exceção, como feriado ou fechamento extraordinário.</td><td>Obrigatória para EXCECAO; única entre exceções vigentes.</td></tr>
-      <tr><td><code>situacao</code></td><td>VARCHAR(10)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>ABERTO ou FECHADO.</td><td>Fechado não admite horários; aberto exige abertura e fechamento válidos.</td></tr>
-      <tr><td><code>hora_abertura</code></td><td>TIME</td><td><span class="no">Não</span></td><td>Início do expediente.</td><td>Obrigatória quando ABERTO.</td></tr>
-      <tr><td><code>hora_fechamento</code></td><td>TIME</td><td><span class="no">Não</span></td><td>Fim do expediente.</td><td>Maior que hora_abertura; obrigatória quando ABERTO.</td></tr>
-      <tr><td><code>vigencia_inicio</code></td><td>DATE</td><td><span class="yes">Sim</span></td><td>Início da vigência da regra.</td><td>Para EXCECAO, normalmente corresponde à data_especifica; não permitir intervalos conflitantes para a mesma regra.</td></tr>
-      <tr><td><code>vigencia_fim</code></td><td>DATE</td><td><span class="no">Não</span></td><td>Fim da vigência, quando substituída.</td><td>Não anterior à vigencia_inicio.</td></tr>
-      <tr><td><code>motivo</code></td><td>VARCHAR(120)</td><td><span class="no">Não</span></td><td>Motivo ou descrição da exceção.</td><td>Recomendado para exceção; sem dados pessoais desnecessários.</td></tr>
-      <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Indica regra aplicável para novas reservas.</td><td>Desativar/substituir preservando a regra histórica referenciada.</td></tr>
+    <div class="table-wrap"><table><thead><tr><th>Atributo</th><th>Tipo</th><th>Obrigatório</th><th>Único</th><th>Padrão</th><th>Descrição</th><th>Regra</th></tr></thead><tbody>
+      <tr><td><code>id_regra_calendario</code></td><td>INT</td><td><span class="yes">Sim</span><span class="badge pk">PK</span></td><td>Sim (PK)</td><td>Auto incremento</td><td>Identificador da regra.</td><td>—</td></tr>
+      <tr><td><code>tipo_regra</code></td><td>VARCHAR(15)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>—</td><td>SEMANAL ou EXCECAO.</td><td>Define se usa dia da semana ou data específica.</td></tr>
+      <tr><td><code>dia_semana</code></td><td>SMALLINT</td><td><span class="no">Não</span></td><td>Composto (dia_semana + vigencia_inicio)</td><td>—</td><td>Dia semanal (1–7).</td><td>Obrigatório para SEMANAL; convenção 1=segunda e 7=domingo.</td></tr>
+      <tr><td><code>data_especifica</code></td><td>DATE</td><td><span class="no">Não</span></td><td>Sim</td><td>—</td><td>Data da exceção, como feriado ou fechamento extraordinário.</td><td>Obrigatória para EXCECAO; única entre exceções vigentes.</td></tr>
+      <tr><td><code>situacao</code></td><td>VARCHAR(10)</td><td><span class="yes">Sim</span><span class="no">(escolha)</span></td><td>Não</td><td>—</td><td>ABERTO ou FECHADO.</td><td>Fechado não admite horários; aberto exige abertura e fechamento válidos.</td></tr>
+      <tr><td><code>hora_abertura</code></td><td>TIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Início do expediente.</td><td>Obrigatória quando ABERTO.</td></tr>
+      <tr><td><code>hora_fechamento</code></td><td>TIME</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Fim do expediente.</td><td>Maior que hora_abertura; obrigatória quando ABERTO.</td></tr>
+      <tr><td><code>vigencia_inicio</code></td><td>DATE</td><td><span class="yes">Sim</span></td><td>Composto (dia_semana + vigencia_inicio)</td><td>—</td><td>Início da vigência da regra.</td><td>Para EXCECAO, normalmente corresponde à data_especifica; não permitir intervalos conflitantes para a mesma regra.</td></tr>
+      <tr><td><code>vigencia_fim</code></td><td>DATE</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Fim da vigência, quando substituída.</td><td>Não anterior à vigencia_inicio.</td></tr>
+      <tr><td><code>motivo</code></td><td>VARCHAR(120)</td><td><span class="no">Não</span></td><td>Não</td><td>—</td><td>Motivo ou descrição da exceção.</td><td>Recomendado para exceção; sem dados pessoais desnecessários.</td></tr>
+      <tr><td><code>ativo</code></td><td>BOOLEAN</td><td><span class="yes">Sim</span></td><td>Não</td><td>Verdadeiro</td><td>Indica regra aplicável para novas reservas.</td><td>Desativar/substituir preservando a regra histórica referenciada.</td></tr>
     </tbody></table></div>
     <p class="indices"><strong>Índices e validação:</strong> PK id_regra_calendario; índices em (tipo_regra, dia_semana, vigencia_inicio), data_especifica e ativo. Garantir por transação ausência de vigências semanais sobrepostas e resolver exceção antes da regra semanal ao validar o agendamento.</p>
   </article>
